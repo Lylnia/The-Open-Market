@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: the-open-market-api
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: TON_API_KEY
+        sync: false
+      - key: TON_WALLET_ADDRESS
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_TELEGRAM_IDS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
