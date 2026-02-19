@@ -2,19 +2,277 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../../hooks/useApi';
 import api from '../../services/api';
+import { IconPlus } from '../../assets/icons';
 
+// Reusable form field
+function Field({ label, children }) {
+    return (
+        <div style={{ marginBottom: 12 }}>
+            <label className="caption" style={{ display: 'block', marginBottom: 4 }}>{label}</label>
+            {children}
+        </div>
+    );
+}
+
+// ========== COLLECTION FORM ==========
+function CollectionForm({ onSuccess, editData, onCancel }) {
+    const [form, setForm] = useState(editData || {
+        name: '', slug: '', logoUrl: '', bannerUrl: '', order: 0, isActive: true,
+        description: { tr: '', en: '', ru: '' },
+    });
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async () => {
+        try {
+            setLoading(true);
+            if (editData?._id) {
+                await api.put(`/admin/collections/${editData._id}`, form);
+            } else {
+                await api.post('/admin/collections', form);
+            }
+            onSuccess();
+        } catch (e) { alert(e?.error || 'Hata oluştu'); }
+        finally { setLoading(false); }
+    };
+
+    const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+    const setDesc = (lang, val) => setForm(prev => ({ ...prev, description: { ...prev.description, [lang]: val } }));
+
+    return (
+        <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+            <h3 className="h3" style={{ marginBottom: 16 }}>{editData ? 'Koleksiyon Düzenle' : 'Yeni Koleksiyon'}</h3>
+            <Field label="Koleksiyon Adı *">
+                <input className="input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Örn: Alpha Club" />
+            </Field>
+            <Field label="Slug * (URL'de kullanılacak)">
+                <input className="input" value={form.slug} onChange={e => set('slug', e.target.value)} placeholder="Örn: alpha-club" />
+            </Field>
+            <Field label="Logo URL">
+                <input className="input" value={form.logoUrl} onChange={e => set('logoUrl', e.target.value)} placeholder="https://..." />
+            </Field>
+            <Field label="Banner URL">
+                <input className="input" value={form.bannerUrl} onChange={e => set('bannerUrl', e.target.value)} placeholder="https://..." />
+            </Field>
+            <Field label="Sıralama">
+                <input className="input" type="number" value={form.order} onChange={e => set('order', parseInt(e.target.value) || 0)} />
+            </Field>
+            <Field label="Açıklama (TR)">
+                <input className="input" value={form.description.tr} onChange={e => setDesc('tr', e.target.value)} placeholder="Türkçe açıklama" />
+            </Field>
+            <Field label="Açıklama (EN)">
+                <input className="input" value={form.description.en} onChange={e => setDesc('en', e.target.value)} placeholder="English description" />
+            </Field>
+            <Field label="Açıklama (RU)">
+                <input className="input" value={form.description.ru} onChange={e => setDesc('ru', e.target.value)} placeholder="Описание" />
+            </Field>
+            <div className="flex gap-8">
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={loading || !form.name || !form.slug}>
+                    {loading ? '...' : editData ? 'Kaydet' : 'Oluştur'}
+                </button>
+                {onCancel && <button className="btn btn-secondary" onClick={onCancel}>İptal</button>}
+            </div>
+        </div>
+    );
+}
+
+// ========== SERIES FORM ==========
+function SeriesForm({ collections, onSuccess, editData, onCancel }) {
+    const [form, setForm] = useState(editData || {
+        name: '', slug: '', collection: '', imageUrl: '', price: '',
+        totalSupply: '', rarity: 'common', royaltyPercent: 5, isActive: true,
+        description: { tr: '', en: '', ru: '' },
+    });
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async () => {
+        try {
+            setLoading(true);
+            const payload = { ...form, price: Math.round(parseFloat(form.price) * 1e9), totalSupply: parseInt(form.totalSupply) };
+            if (editData?._id) {
+                await api.put(`/admin/series/${editData._id}`, payload);
+            } else {
+                await api.post('/admin/series', payload);
+            }
+            onSuccess();
+        } catch (e) { alert(e?.error || 'Hata oluştu'); }
+        finally { setLoading(false); }
+    };
+
+    const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+    const setDesc = (lang, val) => setForm(prev => ({ ...prev, description: { ...prev.description, [lang]: val } }));
+
+    return (
+        <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+            <h3 className="h3" style={{ marginBottom: 16 }}>{editData ? 'Seri Düzenle' : 'Yeni Seri'}</h3>
+            <Field label="Seri Adı *">
+                <input className="input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Örn: Genesis" />
+            </Field>
+            <Field label="Slug *">
+                <input className="input" value={form.slug} onChange={e => set('slug', e.target.value)} placeholder="Örn: genesis" />
+            </Field>
+            <Field label="Koleksiyon *">
+                <select className="input" value={form.collection} onChange={e => set('collection', e.target.value)}>
+                    <option value="">Koleksiyon Seç</option>
+                    {collections?.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                </select>
+            </Field>
+            <Field label="Görsel URL">
+                <input className="input" value={form.imageUrl} onChange={e => set('imageUrl', e.target.value)} placeholder="https://..." />
+            </Field>
+            <Field label="Fiyat (TON) *">
+                <input className="input" type="number" step="0.01" value={form.price} onChange={e => set('price', e.target.value)} placeholder="Örn: 2.5" />
+            </Field>
+            <Field label="Toplam Arz *">
+                <input className="input" type="number" value={form.totalSupply} onChange={e => set('totalSupply', e.target.value)} placeholder="Örn: 100" />
+            </Field>
+            <Field label="Nadirlik *">
+                <select className="input" value={form.rarity} onChange={e => set('rarity', e.target.value)}>
+                    <option value="common">Common (Yaygın)</option>
+                    <option value="rare">Rare (Nadir)</option>
+                    <option value="epic">Epic (Epik)</option>
+                    <option value="legendary">Legendary (Efsanevi)</option>
+                </select>
+            </Field>
+            <Field label="Royalty % (2. el satış komisyonu)">
+                <input className="input" type="number" step="1" min="0" max="50" value={form.royaltyPercent} onChange={e => set('royaltyPercent', parseInt(e.target.value) || 0)} />
+            </Field>
+            <Field label="Açıklama (TR)">
+                <input className="input" value={form.description.tr} onChange={e => setDesc('tr', e.target.value)} />
+            </Field>
+            <Field label="Açıklama (EN)">
+                <input className="input" value={form.description.en} onChange={e => setDesc('en', e.target.value)} />
+            </Field>
+            <Field label="Açıklama (RU)">
+                <input className="input" value={form.description.ru} onChange={e => setDesc('ru', e.target.value)} />
+            </Field>
+            <div className="flex gap-8">
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit}
+                    disabled={loading || !form.name || !form.slug || !form.collection || !form.price || !form.totalSupply}>
+                    {loading ? '...' : editData ? 'Kaydet' : 'Oluştur'}
+                </button>
+                {onCancel && <button className="btn btn-secondary" onClick={onCancel}>İptal</button>}
+            </div>
+        </div>
+    );
+}
+
+// ========== PRESALE FORM ==========
+function PreSaleForm({ seriesList, onSuccess, onCancel }) {
+    const [form, setForm] = useState({
+        name: '', series: '', price: '', totalSupply: '', maxPerUser: 5,
+        startDate: '', endDate: '',
+    });
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async () => {
+        try {
+            setLoading(true);
+            await api.post('/admin/presales', {
+                ...form,
+                price: Math.round(parseFloat(form.price) * 1e9),
+                totalSupply: parseInt(form.totalSupply),
+                maxPerUser: parseInt(form.maxPerUser),
+            });
+            onSuccess();
+        } catch (e) { alert(e?.error || 'Hata oluştu'); }
+        finally { setLoading(false); }
+    };
+
+    const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+
+    return (
+        <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+            <h3 className="h3" style={{ marginBottom: 16 }}>Yeni Ön Satış</h3>
+            <Field label="Ön Satış Adı *">
+                <input className="input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Örn: Genesis Pre-Sale" />
+            </Field>
+            <Field label="Seri *">
+                <select className="input" value={form.series} onChange={e => set('series', e.target.value)}>
+                    <option value="">Seri Seç</option>
+                    {seriesList?.map(s => <option key={s._id} value={s._id}>{s.name} ({s.collection?.name})</option>)}
+                </select>
+            </Field>
+            <Field label="Fiyat (TON) *">
+                <input className="input" type="number" step="0.01" value={form.price} onChange={e => set('price', e.target.value)} placeholder="1.5" />
+            </Field>
+            <Field label="Ön Satış Miktarı *">
+                <input className="input" type="number" value={form.totalSupply} onChange={e => set('totalSupply', e.target.value)} placeholder="50" />
+            </Field>
+            <Field label="Kişi Başı Maksimum">
+                <input className="input" type="number" value={form.maxPerUser} onChange={e => set('maxPerUser', e.target.value)} />
+            </Field>
+            <Field label="Başlangıç Tarihi *">
+                <input className="input" type="datetime-local" value={form.startDate} onChange={e => set('startDate', e.target.value)} />
+            </Field>
+            <Field label="Bitiş Tarihi *">
+                <input className="input" type="datetime-local" value={form.endDate} onChange={e => set('endDate', e.target.value)} />
+            </Field>
+            <div className="flex gap-8">
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit}
+                    disabled={loading || !form.name || !form.series || !form.price || !form.totalSupply || !form.startDate || !form.endDate}>
+                    {loading ? '...' : 'Oluştur'}
+                </button>
+                {onCancel && <button className="btn btn-secondary" onClick={onCancel}>İptal</button>}
+            </div>
+        </div>
+    );
+}
+
+// ========== AIRDROP FORM ==========
+function AirdropForm({ seriesList, onSuccess, onCancel }) {
+    const [seriesId, setSeriesId] = useState('');
+    const [usernames, setUsernames] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async () => {
+        try {
+            setLoading(true);
+            const userIds = usernames.split(',').map(u => u.trim()).filter(Boolean);
+            const res = await api.post('/admin/airdrop', { seriesId, userIds });
+            alert(`${res.data.airdropped} NFT airdrop edildi!`);
+            onSuccess();
+        } catch (e) { alert(e?.error || 'Hata oluştu'); }
+        finally { setLoading(false); }
+    };
+
+    return (
+        <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+            <h3 className="h3" style={{ marginBottom: 16 }}>Airdrop</h3>
+            <Field label="Seri *">
+                <select className="input" value={seriesId} onChange={e => setSeriesId(e.target.value)}>
+                    <option value="">Seri Seç</option>
+                    {seriesList?.map(s => <option key={s._id} value={s._id}>{s.name} (Kalan: {s.totalSupply - s.mintedCount})</option>)}
+                </select>
+            </Field>
+            <Field label="Kullanıcı ID'leri * (virgülle ayır)">
+                <input className="input" value={usernames} onChange={e => setUsernames(e.target.value)} placeholder="userId1, userId2, userId3" />
+            </Field>
+            <div className="flex gap-8">
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={loading || !seriesId || !usernames}>
+                    {loading ? '...' : 'Airdrop Gönder'}
+                </button>
+                {onCancel && <button className="btn btn-secondary" onClick={onCancel}>İptal</button>}
+            </div>
+        </div>
+    );
+}
+
+// ========== MAIN DASHBOARD ==========
 export default function Dashboard() {
     const { t } = useTranslation();
     const [tab, setTab] = useState('stats');
+    const [showForm, setShowForm] = useState(false);
+    const [editItem, setEditItem] = useState(null);
+
     const { data: stats } = useApi('/admin/stats');
     const { data: collections, refetch: refetchCollections } = useApi('/admin/collections');
     const { data: series, refetch: refetchSeries } = useApi('/admin/series');
     const { data: presales, refetch: refetchPresales } = useApi('/admin/presales');
-    const { data: usersData, refetch: refetchUsers } = useApi('/admin/users');
+    const { data: usersData } = useApi('/admin/users');
     const { data: withdrawals, refetch: refetchWithdrawals } = useApi('/admin/withdrawals');
     const { data: apiKeys, refetch: refetchApiKeys } = useApi('/admin/api-keys');
 
-    const tabs = ['stats', 'collections', 'series', 'presales', 'users', 'withdrawals', 'api_keys'];
+    const tabs = ['stats', 'collections', 'series', 'presales', 'users', 'withdrawals', 'airdrop', 'api_keys'];
 
     const handleDelete = async (type, id) => {
         if (!confirm('Silmek istediğinize emin misiniz?')) return;
@@ -34,6 +292,8 @@ export default function Dashboard() {
         } catch (e) { alert(e?.error || 'Failed'); }
     };
 
+    const closeForm = () => { setShowForm(false); setEditItem(null); };
+
     return (
         <div className="page">
             <h1 className="h2" style={{ marginBottom: 16 }}>{t('admin.title')}</h1>
@@ -41,7 +301,7 @@ export default function Dashboard() {
             <div className="scroll-h" style={{ marginBottom: 20 }}>
                 {tabs.map(tabName => (
                     <button key={tabName} className={`btn btn-sm ${tab === tabName ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={() => setTab(tabName)} style={{ whiteSpace: 'nowrap' }}>
+                        onClick={() => { setTab(tabName); closeForm(); }} style={{ whiteSpace: 'nowrap' }}>
                         {t(`admin.${tabName}`)}
                     </button>
                 ))}
@@ -67,49 +327,127 @@ export default function Dashboard() {
 
             {/* Collections */}
             {tab === 'collections' && (
-                <div className="flex-col gap-8">
-                    {collections?.map(col => (
-                        <div key={col._id} className="card flex items-center justify-between" style={{ padding: '12px 14px' }}>
-                            <div>
-                                <p style={{ fontWeight: 600 }}>{col.name}</p>
-                                <p className="caption">{col.slug}</p>
+                <>
+                    {!showForm && (
+                        <button className="btn btn-primary btn-block flex items-center justify-center gap-8" style={{ marginBottom: 16 }}
+                            onClick={() => setShowForm(true)}>
+                            <IconPlus size={16} /> Yeni Koleksiyon
+                        </button>
+                    )}
+                    {(showForm || editItem) && (
+                        <CollectionForm
+                            editData={editItem}
+                            onSuccess={() => { closeForm(); refetchCollections(); }}
+                            onCancel={closeForm}
+                        />
+                    )}
+                    <div className="flex-col gap-8">
+                        {collections?.map(col => (
+                            <div key={col._id} className="card flex items-center justify-between" style={{ padding: '12px 14px' }}>
+                                <div className="flex items-center gap-12" style={{ flex: 1 }}>
+                                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--bg-elevated)', overflow: 'hidden', flexShrink: 0 }}>
+                                        {col.logoUrl && <img src={col.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                    </div>
+                                    <div>
+                                        <p style={{ fontWeight: 600 }}>{col.name}</p>
+                                        <p className="caption">{col.slug}</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <button className="btn btn-sm btn-secondary" onClick={() => { setEditItem(col); setShowForm(false); }}>Düzenle</button>
+                                    <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('collections', col._id)}>Sil</button>
+                                </div>
                             </div>
-                            <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('collections', col._id)}>{t('admin.delete')}</button>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                </>
             )}
 
             {/* Series */}
             {tab === 'series' && (
-                <div className="flex-col gap-8">
-                    {series?.map(s => (
-                        <div key={s._id} className="card flex items-center justify-between" style={{ padding: '12px 14px' }}>
-                            <div>
-                                <p style={{ fontWeight: 600 }}>{s.name}</p>
-                                <p className="caption">{s.collection?.name} — {s.mintedCount}/{s.totalSupply} — Royalty: {s.royaltyPercent}%</p>
+                <>
+                    {!showForm && (
+                        <button className="btn btn-primary btn-block flex items-center justify-center gap-8" style={{ marginBottom: 16 }}
+                            onClick={() => setShowForm(true)}>
+                            <IconPlus size={16} /> Yeni Seri
+                        </button>
+                    )}
+                    {(showForm || editItem) && (
+                        <SeriesForm
+                            collections={collections}
+                            editData={editItem}
+                            onSuccess={() => { closeForm(); refetchSeries(); }}
+                            onCancel={closeForm}
+                        />
+                    )}
+                    <div className="flex-col gap-8">
+                        {series?.map(s => (
+                            <div key={s._id} className="card" style={{ padding: '12px 14px' }}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-12">
+                                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg-elevated)', overflow: 'hidden', flexShrink: 0 }}>
+                                            {s.imageUrl && <img src={s.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-8">
+                                                <p style={{ fontWeight: 600 }}>{s.name}</p>
+                                                <span className={`badge badge-${s.rarity}`} style={{ fontSize: 8 }}>{s.rarity}</span>
+                                            </div>
+                                            <p className="caption">{s.collection?.name} — {s.mintedCount}/{s.totalSupply} — {(s.price / 1e9).toFixed(2)} TON — Royalty: {s.royaltyPercent}%</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button className="btn btn-sm btn-secondary" onClick={() => { setEditItem(s); setShowForm(false); }}>Düzenle</button>
+                                        <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('series', s._id)}>Sil</button>
+                                    </div>
+                                </div>
                             </div>
-                            <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('series', s._id)}>{t('admin.delete')}</button>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                </>
             )}
 
             {/* PreSales */}
             {tab === 'presales' && (
-                <div className="flex-col gap-8">
-                    {presales?.map(ps => (
-                        <div key={ps._id} className="card" style={{ padding: '12px 14px' }}>
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <p style={{ fontWeight: 600 }}>{ps.name}</p>
-                                    <p className="caption">{ps.soldCount}/{ps.totalSupply} sold — {ps.isActive ? 'Active' : 'Inactive'}</p>
+                <>
+                    {!showForm && (
+                        <button className="btn btn-primary btn-block flex items-center justify-center gap-8" style={{ marginBottom: 16 }}
+                            onClick={() => setShowForm(true)}>
+                            <IconPlus size={16} /> Yeni Ön Satış
+                        </button>
+                    )}
+                    {showForm && (
+                        <PreSaleForm
+                            seriesList={series}
+                            onSuccess={() => { closeForm(); refetchPresales(); }}
+                            onCancel={closeForm}
+                        />
+                    )}
+                    <div className="flex-col gap-8">
+                        {presales?.map(ps => {
+                            const progress = ps.totalSupply > 0 ? (ps.soldCount / ps.totalSupply) * 100 : 0;
+                            return (
+                                <div key={ps._id} className="card" style={{ padding: '12px 14px' }}>
+                                    <div className="flex justify-between items-center" style={{ marginBottom: 8 }}>
+                                        <div>
+                                            <p style={{ fontWeight: 600 }}>{ps.name}</p>
+                                            <p className="caption">{ps.series?.name} — {(ps.price / 1e9).toFixed(2)} TON</p>
+                                        </div>
+                                        <div className="flex gap-4 items-center">
+                                            <span className="tag">{ps.isActive ? 'Aktif' : 'Pasif'}</span>
+                                            <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('presales', ps._id)}>Sil</button>
+                                        </div>
+                                    </div>
+                                    <div style={{ marginBottom: 4 }} className="flex justify-between">
+                                        <span className="caption">Satılan: {ps.soldCount}/{ps.totalSupply}</span>
+                                        <span className="caption">{progress.toFixed(0)}%</span>
+                                    </div>
+                                    <div className="progress-bar"><div className="progress-fill" style={{ width: `${progress}%` }} /></div>
                                 </div>
-                                <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('presales', ps._id)}>{t('admin.delete')}</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                            );
+                        })}
+                    </div>
+                </>
             )}
 
             {/* Users */}
@@ -119,9 +457,9 @@ export default function Dashboard() {
                         <div key={u._id} className="card flex items-center gap-12" style={{ padding: '10px 14px' }}>
                             <div style={{ flex: 1 }}>
                                 <p style={{ fontWeight: 500, fontSize: 13 }}>@{u.username || 'user'} — {u.firstName}</p>
-                                <p className="caption">Balance: {(u.balance / 1e9).toFixed(2)} TON | NFTs: {u.telegramId}</p>
+                                <p className="caption">Bakiye: {(u.balance / 1e9).toFixed(2)} TON | TG ID: {u.telegramId}</p>
                             </div>
-                            <span className={`tag ${u.isAdmin ? '' : ''}`}>{u.isAdmin ? 'Admin' : 'User'}</span>
+                            <span className="tag">{u.isAdmin ? 'Admin' : 'User'}</span>
                         </div>
                     ))}
                 </div>
@@ -130,6 +468,7 @@ export default function Dashboard() {
             {/* Withdrawals */}
             {tab === 'withdrawals' && (
                 <div className="flex-col gap-8">
+                    {withdrawals?.length === 0 && <div className="empty-state"><p>Bekleyen çekim yok</p></div>}
                     {withdrawals?.map(tx => (
                         <div key={tx._id} className="card" style={{ padding: '12px 14px' }}>
                             <div className="flex justify-between items-center" style={{ marginBottom: 8 }}>
@@ -137,17 +476,28 @@ export default function Dashboard() {
                                     <p style={{ fontWeight: 600 }}>{(tx.amount / 1e9).toFixed(4)} TON</p>
                                     <p className="caption">@{tx.user?.username} — {tx.memo}</p>
                                 </div>
-                                <span className="tag">{tx.status}</span>
+                                <span className="tag" style={{
+                                    color: tx.status === 'pending' ? 'var(--warning)' : tx.status === 'completed' ? 'var(--success)' : 'var(--error)'
+                                }}>{tx.status}</span>
                             </div>
                             {tx.status === 'pending' && (
                                 <div className="flex gap-8">
-                                    <button className="btn btn-sm btn-primary" style={{ flex: 1 }} onClick={() => handleWithdrawal(tx._id, 'approve')}>{t('admin.approve')}</button>
-                                    <button className="btn btn-sm btn-secondary" style={{ flex: 1 }} onClick={() => handleWithdrawal(tx._id, 'reject')}>{t('admin.reject')}</button>
+                                    <button className="btn btn-sm btn-primary" style={{ flex: 1 }} onClick={() => handleWithdrawal(tx._id, 'approve')}>Onayla</button>
+                                    <button className="btn btn-sm btn-secondary" style={{ flex: 1 }} onClick={() => handleWithdrawal(tx._id, 'reject')}>Reddet</button>
                                 </div>
                             )}
                         </div>
                     ))}
                 </div>
+            )}
+
+            {/* Airdrop */}
+            {tab === 'airdrop' && (
+                <AirdropForm
+                    seriesList={series}
+                    onSuccess={() => {}}
+                    onCancel={null}
+                />
             )}
 
             {/* API Keys */}
@@ -158,10 +508,10 @@ export default function Dashboard() {
                             <div className="flex justify-between items-center">
                                 <div>
                                     <p style={{ fontWeight: 600 }}>{ak.name}</p>
-                                    <p className="caption" style={{ fontFamily: 'monospace', fontSize: 10 }}>{ak.key}</p>
-                                    <p className="caption">Requests: {ak.totalRequests} — {ak.isActive ? 'Active' : 'Inactive'}</p>
+                                    <p className="caption" style={{ fontFamily: 'monospace', fontSize: 10, wordBreak: 'break-all' }}>{ak.key}</p>
+                                    <p className="caption">İstek: {ak.totalRequests} — {ak.isActive ? 'Aktif' : 'Pasif'}</p>
                                 </div>
-                                <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('api-keys', ak._id)}>{t('admin.delete')}</button>
+                                <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('api-keys', ak._id)}>Sil</button>
                             </div>
                         </div>
                     ))}
