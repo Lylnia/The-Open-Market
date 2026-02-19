@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 const api = {
     getToken: () => localStorage.getItem('tom_token'),
@@ -10,11 +10,15 @@ const api = {
         return h;
     },
 
+    _parseError: async (res) => {
+        try { return await res.json(); } catch { return { error: `Request failed (${res.status})` }; }
+    },
+
     get: async (path, params = {}) => {
         const query = new URLSearchParams(params).toString();
         const url = `${API_URL}${path}${query ? '?' + query : ''}`;
         const res = await fetch(url, { headers: api.headers() });
-        if (!res.ok) throw await res.json();
+        if (!res.ok) throw await api._parseError(res);
         return { data: await res.json() };
     },
 
@@ -24,7 +28,7 @@ const api = {
             headers: api.headers(),
             body: JSON.stringify(body),
         });
-        if (!res.ok) throw await res.json();
+        if (!res.ok) throw await api._parseError(res);
         return { data: await res.json() };
     },
 
@@ -34,7 +38,7 @@ const api = {
             headers: api.headers(),
             body: JSON.stringify(body),
         });
-        if (!res.ok) throw await res.json();
+        if (!res.ok) throw await api._parseError(res);
         return { data: await res.json() };
     },
 
@@ -43,7 +47,7 @@ const api = {
             method: 'DELETE',
             headers: api.headers(),
         });
-        if (!res.ok) throw await res.json();
+        if (!res.ok) throw await api._parseError(res);
         return { data: await res.json() };
     },
 };

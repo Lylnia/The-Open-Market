@@ -47,6 +47,20 @@ export function AuthProvider({ children }) {
         initAuth();
     }, [login]);
 
+    // Sync auth state across tabs
+    useEffect(() => {
+        const onStorage = (e) => {
+            if (e.key === 'tom_token') {
+                if (!e.newValue) {
+                    setUser(null);
+                    setToken(null);
+                }
+            }
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, []);
+
     return (
         <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser }}>
             {children}

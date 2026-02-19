@@ -19,37 +19,37 @@ const sendNotification = async (telegramId, message) => {
 
 const notifyPurchase = async (buyerTgId, sellerTgId, seriesName, mintNumber, price) => {
     const nftName = `${seriesName} #${mintNumber}`;
-    await sendNotification(buyerTgId, `✅ <b>${nftName}</b> başarıyla satın alındı!\n💰 Ödenen: ${price} TON`);
+    await sendNotification(buyerTgId, `✅ <b>${nftName}</b> purchased successfully!\n💰 Paid: ${price} TON`);
     if (sellerTgId) {
-        await sendNotification(sellerTgId, `💰 <b>${nftName}</b> satıldı!\n💰 Kazanılan: ${price} TON`);
+        await sendNotification(sellerTgId, `💰 <b>${nftName}</b> sold!\n💰 Earned: ${price} TON`);
     }
 };
 
 const notifyTransfer = async (fromTgId, toTgId, seriesName, mintNumber) => {
     const nftName = `${seriesName} #${mintNumber}`;
-    await sendNotification(fromTgId, `📤 <b>${nftName}</b> transfer edildi.`);
-    await sendNotification(toTgId, `📥 <b>${nftName}</b> size transfer edildi!`);
+    await sendNotification(fromTgId, `📤 <b>${nftName}</b> transferred.`);
+    await sendNotification(toTgId, `📥 <b>${nftName}</b> received!`);
 };
 
 const notifyBid = async (ownerTgId, bidderUsername, seriesName, mintNumber, amount) => {
     const nftName = `${seriesName} #${mintNumber}`;
-    await sendNotification(ownerTgId, `💬 <b>${nftName}</b> için @${bidderUsername} ${amount} TON teklif verdi.`);
+    await sendNotification(ownerTgId, `💬 @${bidderUsername} offered ${amount} TON for <b>${nftName}</b>.`);
 };
 
 const notifyPreSaleStart = async (telegramIds, preSaleName) => {
-    const message = `🚀 <b>${preSaleName}</b> pre-sale başladı!`;
+    const message = `🚀 <b>${preSaleName}</b> pre-sale started!`;
     for (const tgId of telegramIds) {
         await sendNotification(tgId, message);
     }
 };
 
 const notifyDeposit = async (telegramId, amount) => {
-    await sendNotification(telegramId, `💰 <b>${amount} TON</b> bakiyenize yatırıldı.`);
+    await sendNotification(telegramId, `💰 <b>${amount} TON</b> deposited to your balance.`);
 };
 
 const notifyWithdrawal = async (telegramId, amount, status) => {
-    const statusText = status === 'completed' ? 'onaylandı ✅' : 'reddedildi ❌';
-    await sendNotification(telegramId, `💸 <b>${amount} TON</b> çekim talebi ${statusText}.`);
+    const statusText = status === 'completed' ? 'approved ✅' : 'rejected ❌';
+    await sendNotification(telegramId, `💸 <b>${amount} TON</b> withdrawal ${statusText}.`);
 };
 
 module.exports = {

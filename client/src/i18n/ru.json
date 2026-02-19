@@ -14,7 +14,8 @@
         "total_nfts": "Всего NFT",
         "total_owners": "Владельцев",
         "total_volume": "Общий объем",
-        "view_all": "Показать все"
+        "view_all": "Показать все",
+        "no_activity": "Пока нет активности"
     },
     "collection": {
         "series": "Серии",
@@ -147,7 +148,9 @@
         "confirm": "Подтвердить",
         "back": "Назад",
         "ton": "TON",
-        "see_more": "Еще"
+        "see_more": "Еще",
+        "show_all": "Показать все",
+        "show_less": "Скрыть"
     },
     "admin": {
         "title": "Админ панель",

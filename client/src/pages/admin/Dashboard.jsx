@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../../hooks/useApi';
+import { useToast } from '../../contexts/ToastContext';
 import api from '../../services/api';
 import { IconPlus } from '../../assets/icons';
 
@@ -21,6 +22,7 @@ function CollectionForm({ onSuccess, editData, onCancel }) {
         description: { tr: '', en: '', ru: '' },
     });
     const [loading, setLoading] = useState(false);
+    const { showToast } = useToast();
 
     const handleSubmit = async () => {
         try {
@@ -31,7 +33,7 @@ function CollectionForm({ onSuccess, editData, onCancel }) {
                 await api.post('/admin/collections', form);
             }
             onSuccess();
-        } catch (e) { alert(e?.error || 'Hata oluştu'); }
+        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Error', 'error'); }
         finally { setLoading(false); }
     };
 
@@ -83,6 +85,7 @@ function SeriesForm({ collections, onSuccess, editData, onCancel }) {
         description: { tr: '', en: '', ru: '' },
     });
     const [loading, setLoading] = useState(false);
+    const { showToast } = useToast();
 
     const handleSubmit = async () => {
         try {
@@ -94,7 +97,7 @@ function SeriesForm({ collections, onSuccess, editData, onCancel }) {
                 await api.post('/admin/series', payload);
             }
             onSuccess();
-        } catch (e) { alert(e?.error || 'Hata oluştu'); }
+        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Error', 'error'); }
         finally { setLoading(false); }
     };
 
@@ -163,6 +166,7 @@ function PreSaleForm({ seriesList, onSuccess, onCancel }) {
         startDate: '', endDate: '',
     });
     const [loading, setLoading] = useState(false);
+    const { showToast } = useToast();
 
     const handleSubmit = async () => {
         try {
@@ -174,7 +178,7 @@ function PreSaleForm({ seriesList, onSuccess, onCancel }) {
                 maxPerUser: parseInt(form.maxPerUser),
             });
             onSuccess();
-        } catch (e) { alert(e?.error || 'Hata oluştu'); }
+        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Error', 'error'); }
         finally { setLoading(false); }
     };
 
@@ -223,15 +227,16 @@ function AirdropForm({ seriesList, onSuccess, onCancel }) {
     const [seriesId, setSeriesId] = useState('');
     const [usernames, setUsernames] = useState('');
     const [loading, setLoading] = useState(false);
+    const { showToast } = useToast();
 
     const handleSubmit = async () => {
         try {
             setLoading(true);
             const userIds = usernames.split(',').map(u => u.trim()).filter(Boolean);
             const res = await api.post('/admin/airdrop', { seriesId, userIds });
-            alert(`${res.data.airdropped} NFT airdrop edildi!`);
+            if (typeof showToast === 'function') showToast(`${res.data.airdropped} NFT airdropped!`, 'success');
             onSuccess();
-        } catch (e) { alert(e?.error || 'Hata oluştu'); }
+        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Error', 'error'); }
         finally { setLoading(false); }
     };
 
@@ -263,14 +268,15 @@ export default function Dashboard() {
     const [tab, setTab] = useState('stats');
     const [showForm, setShowForm] = useState(false);
     const [editItem, setEditItem] = useState(null);
+    const { showToast } = useToast();
 
     const { data: stats } = useApi('/admin/stats');
-    const { data: collections, refetch: refetchCollections } = useApi('/admin/collections');
-    const { data: series, refetch: refetchSeries } = useApi('/admin/series');
-    const { data: presales, refetch: refetchPresales } = useApi('/admin/presales');
-    const { data: usersData } = useApi('/admin/users');
-    const { data: withdrawals, refetch: refetchWithdrawals } = useApi('/admin/withdrawals');
-    const { data: apiKeys, refetch: refetchApiKeys } = useApi('/admin/api-keys');
+    const { data: collections, refetch: refetchCollections } = useApi(tab === 'collections' || tab === 'series' ? '/admin/collections' : null);
+    const { data: series, refetch: refetchSeries } = useApi(tab === 'series' || tab === 'presales' || tab === 'airdrop' ? '/admin/series' : null);
+    const { data: presales, refetch: refetchPresales } = useApi(tab === 'presales' ? '/admin/presales' : null);
+    const { data: usersData } = useApi(tab === 'users' ? '/admin/users' : null);
+    const { data: withdrawals, refetch: refetchWithdrawals } = useApi(tab === 'withdrawals' ? '/admin/withdrawals' : null);
+    const { data: apiKeys, refetch: refetchApiKeys } = useApi(tab === 'api_keys' ? '/admin/api-keys' : null);
 
     const tabs = ['stats', 'collections', 'series', 'presales', 'users', 'withdrawals', 'airdrop', 'api_keys'];
 
@@ -282,14 +288,14 @@ export default function Dashboard() {
             if (type === 'series') refetchSeries();
             if (type === 'presales') refetchPresales();
             if (type === 'api-keys') refetchApiKeys();
-        } catch (e) { alert(e?.error || 'Failed'); }
+        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Failed', 'error'); }
     };
 
     const handleWithdrawal = async (id, action) => {
         try {
             await api.post(`/admin/withdrawals/${id}/${action}`);
             refetchWithdrawals();
-        } catch (e) { alert(e?.error || 'Failed'); }
+        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Failed', 'error'); }
     };
 
     const closeForm = () => { setShowForm(false); setEditItem(null); };
@@ -495,7 +501,7 @@ export default function Dashboard() {
             {tab === 'airdrop' && (
                 <AirdropForm
                     seriesList={series}
-                    onSuccess={() => {}}
+                    onSuccess={() => { }}
                     onCancel={null}
                 />
             )}

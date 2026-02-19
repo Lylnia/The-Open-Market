@@ -14,7 +14,8 @@
         "total_nfts": "Toplam NFT",
         "total_owners": "Sahip Sayısı",
         "total_volume": "Toplam Hacim",
-        "view_all": "Tümünü Gör"
+        "view_all": "Tümünü Gör",
+        "no_activity": "Henüz aktivite yok"
     },
     "collection": {
         "series": "Seriler",
@@ -147,7 +148,9 @@
         "confirm": "Onayla",
         "back": "Geri",
         "ton": "TON",
-        "see_more": "Daha Fazla"
+        "see_more": "Daha Fazla",
+        "show_all": "Tümünü Gör",
+        "show_less": "Daha Az Göster"
     },
     "admin": {
         "title": "Admin Panel",

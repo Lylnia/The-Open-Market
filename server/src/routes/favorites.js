@@ -1,6 +1,8 @@
 const express = require('express');
 const { auth } = require('../middleware/auth');
 const Favorite = require('../models/Favorite');
+const Collection = require('../models/Collection');
+const Series = require('../models/Series');
 
 const router = express.Router();
 
@@ -13,9 +15,6 @@ router.get('/', auth, async (req, res) => {
         const favorites = await Favorite.find(filter).sort({ createdAt: -1 }).lean();
 
         // Populate based on type
-        const Collection = require('../models/Collection');
-        const Series = require('../models/Series');
-
         const populated = await Promise.all(favorites.map(async (fav) => {
             if (fav.targetType === 'collection') {
                 fav.targetData = await Collection.findById(fav.target).select('name slug logoUrl').lean();

@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { useState } from 'react';
 import api from '../services/api';
 
@@ -15,39 +16,40 @@ export default function NFTDetail() {
     const [listPrice, setListPrice] = useState('');
     const [showBidModal, setShowBidModal] = useState(false);
     const [showListModal, setShowListModal] = useState(false);
+    const { showToast } = useToast();
 
     if (loading) return <div className="page"><div className="loading-center"><div className="spinner" /></div></div>;
     if (!nft) return <div className="page"><p>{t('common.error')}</p></div>;
 
-    const isOwner = user && nft.owner?._id === user.id;
+    const isOwner = user && String(nft.owner?._id) === String(user.id);
     const series = nft.series || {};
 
     const handleBuy = async () => {
         try { setAction('buy'); await api.post(`/nfts/${id}/buy`); refetch(); }
-        catch (e) { alert(e?.error || 'Failed'); }
+        catch (e) { showToast(e?.error || 'Failed', 'error'); }
         finally { setAction(null); }
     };
 
     const handleBid = async () => {
         try { setAction('bid'); await api.post('/bids', { nftId: id, amount: parseFloat(bidAmount) * 1e9 }); setShowBidModal(false); setBidAmount(''); refetch(); }
-        catch (e) { alert(e?.error || 'Failed'); }
+        catch (e) { showToast(e?.error || 'Failed', 'error'); }
         finally { setAction(null); }
     };
 
     const handleList = async () => {
         try { setAction('list'); await api.post(`/nfts/${id}/list`, { price: parseFloat(listPrice) * 1e9 }); setShowListModal(false); setListPrice(''); refetch(); }
-        catch (e) { alert(e?.error || 'Failed'); }
+        catch (e) { showToast(e?.error || 'Failed', 'error'); }
         finally { setAction(null); }
     };
 
     const handleDelist = async () => {
         try { setAction('delist'); await api.post(`/nfts/${id}/delist`); refetch(); }
-        catch (e) { alert(e?.error || 'Failed'); }
+        catch (e) { showToast(e?.error || 'Failed', 'error'); }
         finally { setAction(null); }
     };
 
     const handleAcceptBid = async (bidId) => {
-        try { await api.post(`/bids/${bidId}/accept`); refetch(); } catch (e) { alert(e?.error || 'Failed'); }
+        try { await api.post(`/bids/${bidId}/accept`); refetch(); } catch (e) { showToast(e?.error || 'Failed', 'error'); }
     };
 
     return (

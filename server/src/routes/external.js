@@ -62,6 +62,7 @@ router.get('/series/:slug/holders', apiKeyAuth('list_holders'), async (req, res)
 
         const holders = {};
         nfts.forEach(nft => {
+            if (!nft.owner) return;
             const key = nft.owner.telegramId;
             if (!holders[key]) {
                 holders[key] = { telegramId: nft.owner.telegramId, username: nft.owner.username, nfts: [] };

@@ -1,5 +1,6 @@
 const express = require('express');
 const Collection = require('../models/Collection');
+const Series = require('../models/Series');
 const { getCollectionStats } = require('../services/statsService');
 
 const router = express.Router();
@@ -18,7 +19,6 @@ router.get('/:slug', async (req, res) => {
         const collection = await Collection.findOne({ slug: req.params.slug, isActive: true }).lean();
         if (!collection) return res.status(404).json({ error: 'Collection not found' });
 
-        const Series = require('../models/Series');
         const series = await Series.find({ collection: collection._id, isActive: true }).lean();
         const stats = await getCollectionStats(collection._id);
 

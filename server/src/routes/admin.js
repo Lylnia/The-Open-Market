@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const { auth } = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const Collection = require('../models/Collection');
@@ -38,18 +39,41 @@ router.get('/stats', async (req, res) => {
     }
 });
 
+// ===== FIELD WHITELISTS =====
+const pick = (obj, keys) => keys.reduce((o, k) => { if (obj[k] !== undefined) o[k] = obj[k]; return o; }, {});
+const COLLECTION_FIELDS = ['name', 'slug', 'logoUrl', 'bannerUrl', 'order', 'isActive', 'description'];
+const SERIES_FIELDS = ['name', 'slug', 'collection', 'imageUrl', 'price', 'totalSupply', 'rarity', 'royaltyPercent', 'isActive', 'description', 'attributes'];
+const USER_EDITABLE_FIELDS = ['isAdmin', 'balance'];
+
 // ===== COLLECTIONS CRUD =====
 router.get('/collections', async (req, res) => {
     try { res.json(await Collection.find().sort({ order: 1 }).lean()); } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 router.post('/collections', async (req, res) => {
-    try { res.json(await Collection.create(req.body)); } catch (e) { res.status(500).json({ error: e.message }); }
+    try {
+        const data = pick(req.body, COLLECTION_FIELDS);
+        if (!data.name || !data.slug) return res.status(400).json({ error: 'name and slug are required' });
+        res.json(await Collection.create(data));
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 router.put('/collections/:id', async (req, res) => {
-    try { res.json(await Collection.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (e) { res.status(500).json({ error: 'Failed' }); }
+    try {
+        const data = pick(req.body, COLLECTION_FIELDS);
+        res.json(await Collection.findByIdAndUpdate(req.params.id, data, { new: true }));
+    } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 router.delete('/collections/:id', async (req, res) => {
-    try { await Collection.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Failed' }); }
+    try {
+        // Cascade: delete all series and their NFTs under this collection
+        const seriesInCol = await Series.find({ collection: req.params.id }).select('_id');
+        const seriesIds = seriesInCol.map(s => s._id);
+        if (seriesIds.length > 0) {
+            await NFT.deleteMany({ series: { $in: seriesIds } });
+            await Series.deleteMany({ collection: req.params.id });
+        }
+        await Collection.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
 // ===== SERIES CRUD =====
@@ -57,13 +81,27 @@ router.get('/series', async (req, res) => {
     try { res.json(await Series.find().populate('collection', 'name slug').lean()); } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 router.post('/series', async (req, res) => {
-    try { res.json(await Series.create(req.body)); } catch (e) { res.status(500).json({ error: e.message }); }
+    try {
+        const data = pick(req.body, SERIES_FIELDS);
+        if (!data.name || !data.slug || !data.collection || !data.price || !data.totalSupply) {
+            return res.status(400).json({ error: 'name, slug, collection, price, and totalSupply are required' });
+        }
+        res.json(await Series.create(data));
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 router.put('/series/:id', async (req, res) => {
-    try { res.json(await Series.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (e) { res.status(500).json({ error: 'Failed' }); }
+    try {
+        const data = pick(req.body, SERIES_FIELDS);
+        res.json(await Series.findByIdAndUpdate(req.params.id, data, { new: true }));
+    } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 router.delete('/series/:id', async (req, res) => {
-    try { await Series.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Failed' }); }
+    try {
+        // Cascade: delete all NFTs under this series
+        await NFT.deleteMany({ series: req.params.id });
+        await Series.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
 // ===== NFT MANAGEMENT =====
@@ -106,32 +144,42 @@ router.get('/users', async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 router.put('/users/:id', async (req, res) => {
-    try { res.json(await User.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (e) { res.status(500).json({ error: 'Failed' }); }
+    try {
+        const data = pick(req.body, USER_EDITABLE_FIELDS);
+        res.json(await User.findByIdAndUpdate(req.params.id, data, { new: true }));
+    } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
 // ===== AIRDROP =====
 router.post('/airdrop', async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
         const { userIds, seriesId } = req.body;
-        if (!userIds?.length || !seriesId) return res.status(400).json({ error: 'userIds and seriesId required' });
+        if (!userIds?.length || !seriesId) { await session.abortTransaction(); return res.status(400).json({ error: 'userIds and seriesId required' }); }
 
-        const series = await Series.findById(seriesId);
-        if (!series) return res.status(404).json({ error: 'Series not found' });
+        const series = await Series.findById(seriesId).session(session);
+        if (!series) { await session.abortTransaction(); return res.status(404).json({ error: 'Series not found' }); }
 
         const results = [];
         for (const userId of userIds) {
             if (series.mintedCount >= series.totalSupply) break;
             const mintNumber = series.mintedCount + 1;
-            const nft = await NFT.create({ series: seriesId, mintNumber, owner: userId });
+            const nft = await NFT.create([{ series: seriesId, mintNumber, owner: userId }], { session });
             series.mintedCount += 1;
-            await Transaction.create({ user: userId, type: 'airdrop', nft: nft._id, status: 'completed', description: `Airdrop: ${series.name} #${mintNumber}` });
-            results.push(nft);
+            await Transaction.create([{ user: userId, type: 'airdrop', nft: nft[0]._id, status: 'completed', description: `Airdrop: ${series.name} #${mintNumber}` }], { session });
+            results.push(nft[0]);
         }
-        await series.save();
+        await series.save({ session });
 
+        await session.commitTransaction();
         res.json({ success: true, airdropped: results.length });
     } catch (error) {
+        await session.abortTransaction();
+        console.error('Airdrop error:', error);
         res.status(500).json({ error: 'Airdrop failed' });
+    } finally {
+        session.endSession();
     }
 });
 

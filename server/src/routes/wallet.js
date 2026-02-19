@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const { auth } = require('../middleware/auth');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
@@ -32,31 +33,41 @@ router.post('/deposit', auth, async (req, res) => {
 
 // Request withdrawal
 router.post('/withdraw', auth, async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
         const { amount, toAddress } = req.body;
-        if (!amount || amount <= 0) return res.status(400).json({ error: 'Valid amount required' });
-        if (!toAddress) return res.status(400).json({ error: 'Withdrawal address required' });
+        if (!amount || amount <= 0) { await session.abortTransaction(); return res.status(400).json({ error: 'Valid amount required' }); }
+        if (!toAddress) { await session.abortTransaction(); return res.status(400).json({ error: 'Withdrawal address required' }); }
 
-        if (req.user.balance < amount) {
+        // Re-read user within session for atomicity
+        const user = await User.findById(req.user._id).session(session);
+        if (user.balance < amount) {
+            await session.abortTransaction();
             return res.status(400).json({ error: 'Insufficient balance' });
         }
 
         // Deduct balance immediately, mark as pending for admin approval
-        req.user.balance -= amount;
-        await req.user.save();
+        user.balance -= amount;
+        await user.save({ session });
 
-        const tx = await Transaction.create({
-            user: req.user._id,
+        const tx = await Transaction.create([{
+            user: user._id,
             type: 'withdrawal',
             amount,
             memo: toAddress,
             status: 'pending',
-            description: `${amount / 1e9} TON çekim talebi`,
-        });
+            description: `${amount / 1e9} TON withdrawal request`,
+        }], { session });
 
-        res.json({ success: true, transaction: tx });
+        await session.commitTransaction();
+        res.json({ success: true, transaction: tx[0] });
     } catch (error) {
+        await session.abortTransaction();
+        console.error('Withdrawal error:', error);
         res.status(500).json({ error: 'Withdrawal request failed' });
+    } finally {
+        session.endSession();
     }
 });
 

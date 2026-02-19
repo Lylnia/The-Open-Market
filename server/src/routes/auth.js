@@ -16,7 +16,7 @@ router.post('/telegram', async (req, res) => {
         }
 
         const isValid = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
-        if (!isValid && process.env.NODE_ENV === 'production') {
+        if (!isValid && process.env.NODE_ENV !== 'development') {
             return res.status(401).json({ error: 'Invalid Telegram data' });
         }
 

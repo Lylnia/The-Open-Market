@@ -73,6 +73,108 @@ router.get('/:id/price-history', async (req, res) => {
     }
 });
 
+// Primary mint (lazy mint from series page)
+router.post('/mint', auth, async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const { seriesId, mintNumber } = req.body;
+        if (!seriesId || !mintNumber) {
+            await session.abortTransaction();
+            return res.status(400).json({ error: 'seriesId and mintNumber required' });
+        }
+
+        const series = await Series.findById(seriesId).session(session);
+        if (!series || !series.isActive) {
+            await session.abortTransaction();
+            return res.status(404).json({ error: 'Series not found or inactive' });
+        }
+
+        if (series.mintedCount >= series.totalSupply) {
+            await session.abortTransaction();
+            return res.status(400).json({ error: 'Series sold out' });
+        }
+
+        if (mintNumber < 1 || mintNumber > series.totalSupply) {
+            await session.abortTransaction();
+            return res.status(400).json({ error: 'Invalid mint number' });
+        }
+
+        const existing = await NFT.findOne({ series: seriesId, mintNumber }).session(session);
+        if (existing) {
+            await session.abortTransaction();
+            return res.status(400).json({ error: 'This NFT already minted' });
+        }
+
+        const buyer = await User.findById(req.user._id).session(session);
+        if (buyer.balance < series.price) {
+            await session.abortTransaction();
+            return res.status(400).json({ error: 'Insufficient balance' });
+        }
+
+        buyer.balance -= series.price;
+        await buyer.save({ session });
+
+        const newNft = await NFT.create([{
+            series: seriesId,
+            mintNumber,
+            owner: buyer._id,
+        }], { session });
+
+        series.mintedCount += 1;
+        await series.save({ session });
+
+        await Order.create([{
+            buyer: buyer._id,
+            nft: newNft[0]._id,
+            price: series.price,
+            type: 'primary',
+            status: 'completed',
+        }], { session });
+
+        await Transaction.create([{
+            user: buyer._id,
+            type: 'buy',
+            amount: series.price,
+            nft: newNft[0]._id,
+            status: 'completed',
+            description: `${series.name} #${mintNumber} purchased`,
+        }], { session });
+
+        // Handle referral commission (2%)
+        if (buyer.referredBy) {
+            const commission = Math.floor(series.price * 0.02);
+            if (commission > 0) {
+                const referrer = await User.findById(buyer.referredBy).session(session);
+                if (referrer) {
+                    referrer.balance += commission;
+                    referrer.referralEarnings += commission;
+                    await referrer.save({ session });
+                    await Transaction.create([{
+                        user: referrer._id,
+                        type: 'referral_earning',
+                        amount: commission,
+                        nft: newNft[0]._id,
+                        fromUser: buyer._id,
+                        status: 'completed',
+                    }], { session });
+                }
+            }
+        }
+
+        await session.commitTransaction();
+
+        notifyPurchase(buyer.telegramId, null, series.name, mintNumber, series.price / 1e9);
+        res.json({ success: true, nft: newNft[0] });
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Mint error:', error);
+        res.status(500).json({ error: 'Mint failed' });
+    } finally {
+        session.endSession();
+    }
+});
+
 // Buy NFT (primary or secondary)
 router.post('/:id/buy', auth, async (req, res) => {
     const session = await mongoose.startSession();
@@ -147,7 +249,7 @@ router.post('/:id/buy', auth, async (req, res) => {
                 amount: series.price,
                 nft: newNft[0]._id,
                 status: 'completed',
-                description: `${series.name} #${mintNumber} satın alındı`,
+                description: `${series.name} #${mintNumber} purchased`,
             }], { session });
 
             // Handle referral commission (2%)

@@ -14,7 +14,8 @@
         "total_nfts": "Total NFTs",
         "total_owners": "Total Owners",
         "total_volume": "Total Volume",
-        "view_all": "View All"
+        "view_all": "View All",
+        "no_activity": "No activity yet"
     },
     "collection": {
         "series": "Series",
@@ -147,7 +148,9 @@
         "confirm": "Confirm",
         "back": "Back",
         "ton": "TON",
-        "see_more": "See More"
+        "see_more": "See More",
+        "show_all": "Show All",
+        "show_less": "Show Less"
     },
     "admin": {
         "title": "Admin Panel",
@@ -170,5 +173,9 @@
         "total_orders": "Total Orders",
         "total_volume": "Total Volume",
         "pending_withdrawals": "Pending Withdrawals"
+    },
+    "maintenance": {
+        "title": "Under Maintenance",
+        "message": "We are performing scheduled maintenance. We'll be back shortly!"
     }
 }

@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../hooks/useApi';
+import { useToast } from '../contexts/ToastContext';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { IconPresale } from '../assets/icons';
 
 function Countdown({ targetDate }) {
     const [time, setTime] = useState('');
-    useState(() => {
+    useEffect(() => {
         const update = () => {
             const diff = new Date(targetDate) - Date.now();
             if (diff <= 0) { setTime('00:00:00'); return; }
@@ -29,6 +30,7 @@ export default function PreSale() {
     const [tab, setTab] = useState('active');
     const { user } = useAuth();
     const [buying, setBuying] = useState(null);
+    const { showToast } = useToast();
 
     const handleBuy = async (presaleId) => {
         try {
@@ -36,7 +38,7 @@ export default function PreSale() {
             await api.post(`/presale/${presaleId}/buy`);
             refetch();
         } catch (e) {
-            alert(e?.error || 'Purchase failed');
+            showToast(e?.error || 'Purchase failed', 'error');
         } finally {
             setBuying(null);
         }

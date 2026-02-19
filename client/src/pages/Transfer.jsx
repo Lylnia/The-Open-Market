@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+import { useToast } from '../contexts/ToastContext';
 import api from '../services/api';
 
 export default function Transfer() {
     const { t } = useTranslation();
+    const { showToast } = useToast();
     const [params] = useSearchParams();
     const [username, setUsername] = useState('');
     const [selectedNft, setSelectedNft] = useState(params.get('nft') || '');
@@ -18,19 +20,23 @@ export default function Transfer() {
             setLoading(true);
             await api.post('/transfer/send', { nftId: selectedNft, toUsername: username });
             setSuccess(true);
-        } catch (e) { alert(e?.error || 'Transfer failed'); }
-        finally { setLoading(false); }
+            showToast(t('transfer.success'), 'success');
+        } catch (e) {
+            showToast(e?.error || 'Transfer failed', 'error');
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (success) {
         return (
             <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--success-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20,6 9,17 4,12" />
                     </svg>
                 </div>
-                <p style={{ fontSize: 18, fontWeight: 600 }}>{t('transfer.success')}</p>
+                <p style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px' }}>{t('transfer.success')}</p>
             </div>
         );
     }
@@ -50,17 +56,22 @@ export default function Transfer() {
                     <div className="flex-col gap-8">
                         {nfts?.map(nft => (
                             <div key={nft._id}
-                                className={`card flex items-center gap-12 ${selectedNft === nft._id ? 'selected' : ''}`}
+                                className="card flex items-center gap-12"
                                 style={{
-                                    padding: '10px 14px', cursor: 'pointer',
-                                    border: selectedNft === nft._id ? '2px solid var(--accent)' : '1px solid var(--border)',
+                                    padding: '12px 14px', cursor: 'pointer',
+                                    boxShadow: selectedNft === nft._id ? '0 0 0 2px var(--accent)' : 'var(--shadow-card)',
                                 }}
                                 onClick={() => setSelectedNft(nft._id)}
                             >
-                                <div style={{ width: 40, height: 40, borderRadius: 10, overflow: 'hidden', background: 'var(--bg-elevated)', flexShrink: 0 }}>
+                                <div style={{ width: 44, height: 44, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-elevated)', flexShrink: 0 }}>
                                     {nft.series?.imageUrl && <img src={nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                                 </div>
-                                <p style={{ fontWeight: 500, fontSize: 14 }}>{nft.series?.name} #{nft.mintNumber}</p>
+                                <p style={{ fontWeight: 600, fontSize: 15 }}>{nft.series?.name} #{nft.mintNumber}</p>
+                                {selectedNft === nft._id && (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--accent)" style={{ marginLeft: 'auto' }}>
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                    </svg>
+                                )}
                             </div>
                         ))}
                     </div>

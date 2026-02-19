@@ -13,6 +13,7 @@ export default function Profile() {
     const { theme, toggleTheme } = useTheme();
     const { language, setLanguage } = useLanguage();
     const { data: nfts } = useApi('/user/nfts');
+    const [showAllNfts, setShowAllNfts] = useState(false);
     const [copied, setCopied] = useState(false);
 
     const copyReferral = () => {
@@ -92,20 +93,27 @@ export default function Profile() {
                     <span className="tag">{nfts?.length || 0}</span>
                 </div>
                 {nfts?.length > 0 ? (
-                    <div className="grid-2">
-                        {nfts.slice(0, 6).map(nft => (
-                            <Link key={nft._id} to={`/nft/${nft._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                                    <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-elevated)', overflow: 'hidden' }}>
-                                        {nft.series?.imageUrl && <img src={nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    <>
+                        <div className="grid-2">
+                            {(showAllNfts ? nfts : nfts.slice(0, 6)).map(nft => (
+                                <Link key={nft._id} to={`/nft/${nft._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                                        <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-elevated)', overflow: 'hidden' }}>
+                                            {nft.series?.imageUrl && <img src={nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                        </div>
+                                        <div style={{ padding: '8px 10px' }}>
+                                            <p style={{ fontSize: 11, fontWeight: 600 }}>{nft.series?.name} #{nft.mintNumber}</p>
+                                        </div>
                                     </div>
-                                    <div style={{ padding: '8px 10px' }}>
-                                        <p style={{ fontSize: 11, fontWeight: 600 }}>{nft.series?.name} #{nft.mintNumber}</p>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                        {nfts.length > 6 && (
+                            <button className="btn btn-secondary btn-block" style={{ marginTop: 12 }} onClick={() => setShowAllNfts(prev => !prev)}>
+                                {showAllNfts ? t('common.show_less') : `${t('common.show_all')} (${nfts.length})`}
+                            </button>
+                        )}
+                    </>
                 ) : (
                     <div className="empty-state" style={{ padding: '24px 0' }}>
                         <IconGrid size={32} style={{ opacity: 0.3 }} />

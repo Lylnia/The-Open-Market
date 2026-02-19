@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useApi } from '../hooks/useApi';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import api from '../services/api';
 
 export default function SeriesDetail() {
@@ -11,14 +12,15 @@ export default function SeriesDetail() {
     const { user } = useAuth();
     const { data, loading, refetch } = useApi(`/series/${slug}`);
     const [buyingMint, setBuyingMint] = useState(null);
+    const { showToast } = useToast();
 
     const handleBuy = async (mintNumber) => {
         try {
             setBuyingMint(mintNumber);
-            await api.post(`/nfts/new/buy`, { seriesId: data._id, mintNumber });
+            await api.post(`/nfts/mint`, { seriesId: data._id, mintNumber });
             refetch();
         } catch (e) {
-            alert(e?.error || 'Purchase failed');
+            showToast(e?.error || 'Purchase failed', 'error');
         } finally {
             setBuyingMint(null);
         }

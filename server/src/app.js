@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
-const { generalLimiter, authLimiter, walletLimiter } = require('./middleware/rateLimit');
+const { generalLimiter, authLimiter, walletLimiter, bidLimiter, searchLimiter } = require('./middleware/rateLimit');
 const { initBot } = require('./services/telegramService');
 
 const app = express();
@@ -14,7 +14,7 @@ initBot();
 
 // Middleware
 app.use(cors({
-    origin: process.env.FRONTEND_URL || '*',
+    origin: process.env.FRONTEND_URL,
     credentials: true,
 }));
 app.use(express.json());
@@ -31,8 +31,8 @@ app.use('/api/presale', require('./routes/presale'));
 app.use('/api/transfer', require('./routes/transfer'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/favorites', require('./routes/favorites'));
-app.use('/api/bids', require('./routes/bids'));
-app.use('/api/search', require('./routes/search'));
+app.use('/api/bids', bidLimiter, require('./routes/bids'));
+app.use('/api/search', searchLimiter, require('./routes/search'));
 app.use('/api/external', require('./routes/external'));
 app.use('/api/admin', require('./routes/admin'));
 
@@ -75,7 +75,8 @@ app.get('/api/stats/:type/:id', async (req, res) => {
 // Referral
 app.post('/api/referral/generate', require('./middleware/auth').auth, async (req, res) => {
     try {
-        res.json({ referralCode: req.user.referralCode, link: `https://t.me/your_bot?start=ref_${req.user.referralCode}` });
+        const botUsername = process.env.BOT_USERNAME || 'TheOpenMarketBot';
+        res.json({ referralCode: req.user.referralCode, link: `https://t.me/${botUsername}?start=ref_${req.user.referralCode}` });
     } catch (error) {
         res.status(500).json({ error: 'Failed' });
     }
@@ -108,8 +109,11 @@ app.get('/api/user/nfts', require('./middleware/auth').auth, async (req, res) =>
     }
 });
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: Date.now() }));
+// Health check + Maintenance mode
+app.get('/api/health', (req, res) => {
+    const maintenance = process.env.MAINTENANCE_MODE === 'true';
+    res.json({ status: maintenance ? 'maintenance' : 'ok', maintenance, timestamp: Date.now() });
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`The Open Market API running on port ${PORT}`));

@@ -10,6 +10,14 @@ const bidSchema = new mongoose.Schema({
 
 bidSchema.index({ bidder: 1, status: 1 });
 bidSchema.index({ nft: 1, status: 1 });
-bidSchema.index({ expiresAt: 1 });
+bidSchema.index({ expiresAt: 1, status: 1 });
+
+// Static: bulk-expire old bids (call periodically or on read)
+bidSchema.statics.expireOldBids = async function () {
+    return this.updateMany(
+        { status: 'active', expiresAt: { $lt: new Date() } },
+        { status: 'expired' }
+    );
+};
 
 module.exports = mongoose.model('Bid', bidSchema);

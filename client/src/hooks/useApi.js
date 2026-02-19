@@ -7,6 +7,7 @@ export function useApi(path, params = {}, deps = []) {
     const [error, setError] = useState(null);
 
     const refetch = useCallback(async () => {
+        if (!path) { setLoading(false); setData(null); return; }
         setLoading(true);
         setError(null);
         try {
@@ -19,9 +20,10 @@ export function useApi(path, params = {}, deps = []) {
         }
     }, [path, JSON.stringify(params)]);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         refetch();
-    }, [refetch, ...deps]);
+    }, [refetch, JSON.stringify(deps)]);
 
     return { data, loading, error, refetch };
 }

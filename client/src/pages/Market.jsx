@@ -7,7 +7,8 @@ import { IconSearch } from '../assets/icons';
 export default function Market() {
     const { t } = useTranslation();
     const [search, setSearch] = useState('');
-    const { data, loading } = useApi('/nfts', { listed: 'true', limit: 50 });
+    const [page, setPage] = useState(1);
+    const { data, loading } = useApi('/nfts', { listed: 'true', limit: 20, page }, [page]);
     const { data: searchResults } = useApi(search.length >= 2 ? '/search' : null, search.length >= 2 ? { q: search } : {}, [search]);
 
     return (
@@ -92,6 +93,13 @@ export default function Market() {
                         </div>
                     ) : (
                         <div className="empty-state"><p>{t('market.no_results')}</p></div>
+                    )}
+                    {data?.pagination && data.pagination.pages > 1 && (
+                        <div className="flex items-center justify-center gap-8" style={{ marginTop: 16 }}>
+                            <button className="btn btn-secondary btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>{t('common.back')}</button>
+                            <span className="caption">{page} / {data.pagination.pages}</span>
+                            <button className="btn btn-secondary btn-sm" disabled={page >= data.pagination.pages} onClick={() => setPage(p => p + 1)}>{t('common.see_more')}</button>
+                        </div>
                     )}
                 </>
             )}

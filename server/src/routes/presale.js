@@ -56,11 +56,12 @@ router.post('/:id/buy', auth, async (req, res) => {
             return res.status(400).json({ error: 'Pre-sale sold out' });
         }
 
-        // Check per-user limit
+        // Check per-user limit for THIS specific presale
         const userPurchases = await Order.countDocuments({
             buyer: req.user._id,
             type: 'presale',
             status: 'completed',
+            nft: { $in: await NFT.find({ series: presale.series }).select('_id').session(session).then(nfts => nfts.map(n => n._id)) },
         }).session(session);
 
         if (userPurchases >= presale.maxPerUser) {
