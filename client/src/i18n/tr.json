@@ -173,5 +173,9 @@
         "total_orders": "Toplam Sipariş",
         "total_volume": "Toplam Hacim",
         "pending_withdrawals": "Bekleyen Çekimler"
+    },
+    "maintenance": {
+        "title": "Bakım Çalışması",
+        "message": "Planlı bakım çalışması yapılmaktadır. Kısa süre içinde geri döneceğiz!"
     }
 }
