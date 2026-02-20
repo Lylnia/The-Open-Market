@@ -36,109 +36,69 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/:id/buy', auth, async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    const { withRetry } = require('../utils/transactionRetry');
     try {
-        const presale = await PreSale.findById(req.params.id).session(session);
-        if (!presale || !presale.isActive) {
-            await session.abortTransaction();
-            return res.status(404).json({ error: 'Pre-sale not found' });
-        }
+        const result = await withRetry(async (session) => {
+            const throwErr = (msg, status = 400) => { const e = new Error(msg); e.statusCode = status; throw e; };
 
-        const now = new Date();
-        if (now < presale.startDate || now > presale.endDate) {
-            await session.abortTransaction();
-            return res.status(400).json({ error: 'Pre-sale not active' });
-        }
+            const presale = await PreSale.findById(req.params.id).session(session);
+            if (!presale || !presale.isActive) throwErr('Pre-sale not found', 404);
 
-        if (presale.soldCount >= presale.totalSupply) {
-            await session.abortTransaction();
-            return res.status(400).json({ error: 'Pre-sale sold out' });
-        }
+            const now = new Date();
+            if (now < presale.startDate || now > presale.endDate) throwErr('Pre-sale not active', 400);
+            if (presale.soldCount >= presale.totalSupply) throwErr('Pre-sale sold out', 400);
 
-        // Check per-user limit for THIS specific presale
-        const userPurchases = await Order.countDocuments({
-            buyer: req.user._id,
-            type: 'presale',
-            status: 'completed',
-            nft: { $in: await NFT.find({ series: presale.series }).select('_id').session(session).then(nfts => nfts.map(n => n._id)) },
-        }).session(session);
+            const userPurchases = await Order.countDocuments({
+                buyer: req.user._id,
+                type: 'presale',
+                status: 'completed',
+                nft: { $in: await NFT.find({ series: presale.series }).select('_id').session(session).then(nfts => nfts.map(n => n._id)) },
+            }).session(session);
 
-        if (userPurchases >= presale.maxPerUser) {
-            await session.abortTransaction();
-            return res.status(400).json({ error: `Max ${presale.maxPerUser} per user` });
-        }
+            if (userPurchases >= presale.maxPerUser) throwErr(`Max ${presale.maxPerUser} per user`, 400);
 
-        const buyer = await User.findById(req.user._id).session(session);
-        if (buyer.balance < presale.price) {
-            await session.abortTransaction();
-            return res.status(400).json({ error: 'Insufficient balance' });
-        }
+            const buyer = await User.findById(req.user._id).session(session);
+            if (buyer.balance < presale.price) throwErr('Insufficient balance', 400);
 
-        const series = await Series.findById(presale.series).session(session);
-        if (series.mintedCount >= series.totalSupply) {
-            await session.abortTransaction();
-            return res.status(400).json({ error: 'Series sold out' });
-        }
+            const series = await Series.findById(presale.series).session(session);
+            if (series.mintedCount >= series.totalSupply) throwErr('Series sold out', 400);
 
-        // Generate fully random available mint number
-        const existingMints = await NFT.find({ series: series._id }).select('mintNumber').lean().session(session);
-        const mintedSet = new Set(existingMints.map(n => n.mintNumber));
-        const availableItems = [];
-        for (let i = 1; i <= series.totalSupply; i++) {
-            if (!mintedSet.has(i)) availableItems.push(i);
-        }
+            const existingMints = await NFT.find({ series: series._id }).select('mintNumber').lean().session(session);
+            const mintedSet = new Set(existingMints.map(n => n.mintNumber));
+            const availableItems = [];
+            for (let i = 1; i <= series.totalSupply; i++) {
+                if (!mintedSet.has(i)) availableItems.push(i);
+            }
 
-        if (availableItems.length === 0) {
-            await session.abortTransaction();
-            return res.status(400).json({ error: 'Series sold out' });
-        }
+            if (availableItems.length === 0) throwErr('Series sold out', 400);
 
-        const mintNumber = availableItems[Math.floor(Math.random() * availableItems.length)];
+            const mintNumber = availableItems[Math.floor(Math.random() * availableItems.length)];
 
-        // Deduct balance
-        buyer.balance -= presale.price;
-        await buyer.save({ session });
+            buyer.balance -= presale.price;
+            await buyer.save({ session });
 
-        // Create NFT (lazy mint)
-        const nft = await NFT.create([{
-            series: series._id,
-            mintNumber,
-            owner: buyer._id,
-        }], { session });
+            const nft = await NFT.create([{ series: series._id, mintNumber, owner: buyer._id }], { session });
 
-        // Update counts
-        series.mintedCount += 1;
-        await series.save({ session });
-        presale.soldCount += 1;
-        await presale.save({ session });
+            series.mintedCount += 1;
+            await series.save({ session });
+            presale.soldCount += 1;
+            await presale.save({ session });
 
-        // Create order
-        await Order.create([{
-            buyer: buyer._id,
-            nft: nft[0]._id,
-            price: presale.price,
-            type: 'presale',
-            status: 'completed',
-        }], { session });
+            await Order.create([{
+                buyer: buyer._id, nft: nft[0]._id, price: presale.price, type: 'presale', status: 'completed'
+            }], { session });
 
-        // Transaction record
-        await Transaction.create([{
-            user: buyer._id,
-            type: 'buy',
-            amount: presale.price,
-            nft: nft[0]._id,
-            status: 'completed',
-            description: `Pre-sale: ${series.name} #${mintNumber}`,
-        }], { session });
+            await Transaction.create([{
+                user: buyer._id, type: 'buy', amount: presale.price, nft: nft[0]._id, status: 'completed',
+                description: `Pre-sale: ${series.name} #${mintNumber}`,
+            }], { session });
 
-        await session.commitTransaction();
-        res.json({ success: true, nft: nft[0] });
+            return { nft: nft[0] };
+        });
+
+        res.json({ success: true, nft: result.nft });
     } catch (error) {
-        await session.abortTransaction();
-        res.status(500).json({ error: 'Pre-sale purchase failed' });
-    } finally {
-        session.endSession();
+        res.status(error.statusCode || 500).json({ error: error.message || 'Pre-sale purchase failed' });
     }
 });
 

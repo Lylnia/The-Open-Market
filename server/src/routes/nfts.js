@@ -107,22 +107,14 @@ router.get('/:id/price-history', asyncHandler(async (req, res) => {
 
 // Primary mint (lazy mint from series page)
 router.post('/mint', auth, asyncHandler(async (req, res) => {
-    let session = await mongoose.startSession();
-    try {
-        session.startTransaction();
+    const { withRetry } = require('../utils/transactionRetry');
+    const result = await withRetry(async (session) => {
         const { seriesId } = req.body;
-        if (!seriesId) {
-            throw new AppError('seriesId required', 400);
-        }
+        if (!seriesId) throw new AppError('seriesId required', 400);
 
         const series = await Series.findById(seriesId).session(session);
-        if (!series || !series.isActive) {
-            throw new AppError('Series not found or inactive', 404);
-        }
-
-        if (series.mintedCount >= series.totalSupply) {
-            throw new AppError('Series sold out', 400);
-        }
+        if (!series || !series.isActive) throw new AppError('Series not found or inactive', 404);
+        if (series.mintedCount >= series.totalSupply) throw new AppError('Series sold out', 400);
 
         // Generate fully random available mint number
         const existingMints = await NFT.find({ series: seriesId }).select('mintNumber').lean().session(session);
@@ -131,39 +123,30 @@ router.post('/mint', auth, asyncHandler(async (req, res) => {
         for (let i = 1; i <= series.totalSupply; i++) {
             if (!mintedSet.has(i)) availableItems.push(i);
         }
-
         if (availableItems.length === 0) throw new AppError('Series sold out', 400);
 
         const mintNumber = availableItems[Math.floor(Math.random() * availableItems.length)];
 
-        const existing = await NFT.findOne({ series: seriesId, mintNumber }).session(session);
-        if (existing) {
-            throw new AppError('This NFT already minted', 400);
-        }
+        // We skip exact duplicate manual check because we rely on the unique index catching races
 
         const buyer = await User.findById(req.user._id).session(session);
-        if (buyer.balance < series.price) {
-            throw new AppError('Insufficient balance', 400);
-        }
+        if (buyer.balance < series.price) throw new AppError('Insufficient balance', 400);
 
         buyer.balance -= series.price;
         await buyer.save({ session });
 
-        const newNft = await NFT.create([{
-            series: seriesId,
-            mintNumber,
-            owner: buyer._id,
-        }], { session });
+        const newNft = await NFT.create([{ series: seriesId, mintNumber, owner: buyer._id }], { session });
 
         series.mintedCount += 1;
         await series.save({ session });
 
         await Order.create([{
-            buyer: buyer._id,
-            nft: newNft[0]._id,
-            price: series.price,
-            type: 'primary',
-            status: 'completed',
+            buyer: buyer._id, nft: newNft[0]._id, price: series.price, type: 'primary', status: 'completed'
+        }], { session });
+
+        const tx = await Transaction.create([{
+            user: buyer._id, type: 'buy', amount: series.price, nft: newNft[0]._id, status: 'completed',
+            description: `Minted: ${series.name} #${mintNumber}`
         }], { session });
 
         // Handle referral commission (2%)
@@ -176,106 +159,67 @@ router.post('/mint', auth, asyncHandler(async (req, res) => {
                     referrer.referralEarnings += commission;
                     await referrer.save({ session });
                     await Transaction.create([{
-                        user: referrer._id,
-                        type: 'referral_earning',
-                        amount: commission,
-                        nft: newNft[0]._id,
-                        fromUser: buyer._id,
-                        status: 'completed',
+                        user: referrer._id, type: 'referral_earning', amount: commission, nft: newNft[0]._id, fromUser: buyer._id, status: 'completed'
                     }], { session });
                 }
             }
         }
 
-        await session.commitTransaction();
+        return { nft: newNft[0], buyer, series, transaction: tx[0] };
+    });
 
-        // Emit real-time events
-        try {
-            const io = getIO();
-            const activityPopulated = await Transaction.findById(newTransaction[0]._id)
-                .populate('user', 'username firstName')
-                .populate({ path: 'nft', populate: { path: 'series', select: 'name slug imageUrl' } })
-                .lean();
-            io.emit('activity:new', activityPopulated);
-            io.emit('nft:sold', { nftId: newNft[0]._id, buyer: buyer._id, price: series.price });
-        } catch (socketErr) {
-            console.error('Socket emit error:', socketErr);
-        }
-
-        notifyPurchase(buyer.telegramId, null, series.name, mintNumber, series.price / 1e9);
-        res.json({ success: true, nft: newNft[0] });
-    } catch (error) {
-        if (session.inTransaction()) {
-            await session.abortTransaction();
-        }
-        throw error;
-    } finally {
-        session.endSession();
+    // Emit real-time events outside transaction
+    try {
+        const io = getIO();
+        const activityPopulated = await Transaction.findById(result.transaction._id)
+            .populate('user', 'username firstName')
+            .populate({ path: 'nft', populate: { path: 'series', select: 'name slug imageUrl' } })
+            .lean();
+        io.emit('activity:new', activityPopulated);
+        io.emit('nft:sold', { nftId: result.nft._id, buyer: result.buyer._id, price: result.series.price });
+    } catch (socketErr) {
+        console.error('Socket emit error:', socketErr);
     }
+
+    notifyPurchase(result.buyer.telegramId, null, result.series.name, result.nft.mintNumber, result.series.price / 1e9);
+    res.json({ success: true, nft: result.nft });
 }));
 
 // Buy NFT (primary or secondary)
 router.post('/:id/buy', auth, validate(buySchema), asyncHandler(async (req, res) => {
-    let session = await mongoose.startSession();
-    try {
-        session.startTransaction();
+    const { withRetry } = require('../utils/transactionRetry');
+    const result = await withRetry(async (session) => {
         const nft = await NFT.findById(req.params.id).populate('series').session(session);
 
-        // If NFT doesn't exist yet, it's a primary sale (lazy mint)
+        // Primary sale (lazy mint)
         if (!nft) {
             const { seriesId, mintNumber } = req.body;
-            if (!seriesId || !mintNumber) {
-                throw new AppError('seriesId and mintNumber required for primary purchase', 400);
-            }
+            if (!seriesId || !mintNumber) throw new AppError('seriesId and mintNumber required for primary purchase', 400);
 
             const series = await Series.findById(seriesId).session(session);
-            if (!series || !series.isActive) {
-                throw new AppError('Series not found or inactive', 404);
-            }
-
-            if (series.mintedCount >= series.totalSupply) {
-                throw new AppError('Series sold out', 400);
-            }
-
-            if (mintNumber < 1 || mintNumber > series.totalSupply) {
-                throw new AppError('Invalid mint number', 400);
-            }
-
-            const existing = await NFT.findOne({ series: seriesId, mintNumber }).session(session);
-            if (existing) {
-                throw new AppError('This NFT already minted', 400);
-            }
+            if (!series || !series.isActive) throw new AppError('Series not found or inactive', 404);
+            if (series.mintedCount >= series.totalSupply) throw new AppError('Series sold out', 400);
+            if (mintNumber < 1 || mintNumber > series.totalSupply) throw new AppError('Invalid mint number', 400);
 
             const buyer = await User.findById(req.user._id).session(session);
-            if (buyer.balance < series.price) {
-                throw new AppError('Insufficient balance', 400);
-            }
+            if (buyer.balance < series.price) throw new AppError('Insufficient balance', 400);
 
-            // Deduct balance
             buyer.balance -= series.price;
             await buyer.save({ session });
 
-            // Create NFT (lazy mint)
-            const newNft = await NFT.create([{
-                series: seriesId,
-                mintNumber,
-                owner: buyer._id,
-            }], { session });
-
-            // Update series minted count
+            const newNft = await NFT.create([{ series: seriesId, mintNumber, owner: buyer._id }], { session });
             series.mintedCount += 1;
             await series.save({ session });
 
-            // Create order
             await Order.create([{
-                buyer: buyer._id,
-                nft: newNft[0]._id,
-                price: series.price,
-                type: 'primary',
-                status: 'completed',
+                buyer: buyer._id, nft: newNft[0]._id, price: series.price, type: 'primary', status: 'completed'
             }], { session });
 
-            // Handle referral commission (2%)
+            const tx = await Transaction.create([{
+                user: buyer._id, type: 'buy', amount: series.price, nft: newNft[0]._id, status: 'completed',
+                description: `Minted: ${series.name} #${mintNumber}`
+            }], { session });
+
             if (buyer.referredBy) {
                 const commission = Math.floor(series.price * 0.02);
                 if (commission > 0) {
@@ -285,85 +229,52 @@ router.post('/:id/buy', auth, validate(buySchema), asyncHandler(async (req, res)
                         referrer.referralEarnings += commission;
                         await referrer.save({ session });
                         await Transaction.create([{
-                            user: referrer._id,
-                            type: 'referral_earning',
-                            amount: commission,
-                            nft: newNft[0]._id,
-                            fromUser: buyer._id,
-                            status: 'completed',
+                            user: referrer._id, type: 'referral_earning', amount: commission, nft: newNft[0]._id, fromUser: buyer._id, status: 'completed'
                         }], { session });
                     }
                 }
             }
 
-            await session.commitTransaction();
-
-            // Emit real-time events
-            try {
-                const io = getIO();
-                const newTransaction = await Transaction.findOne({ user: buyer._id, nft: newNft[0]._id, status: 'completed' }).sort({ createdAt: -1 });
-                if (newTransaction) {
-                    const activityPopulated = await Transaction.findById(newTransaction._id)
-                        .populate('user', 'username firstName')
-                        .populate({ path: 'nft', populate: { path: 'series', select: 'name slug imageUrl' } })
-                        .lean();
-                    io.emit('activity:new', activityPopulated);
-                }
-                io.emit('nft:sold', { nftId: newNft[0]._id, buyer: buyer._id, price: series.price });
-            } catch (socketErr) {
-                console.error('Socket emit error:', socketErr);
-            }
-
-            notifyPurchase(buyer.telegramId, null, series.name, mintNumber, series.price / 1e9);
-            return res.json({ success: true, nft: newNft[0] });
+            return { type: 'primary', nft: newNft[0], buyer, series, transaction: tx[0] };
         }
 
         // Secondary sale
-        if (!nft.isListed) {
-            throw new AppError('NFT not listed for sale', 400);
-        }
+        if (!nft.isListed) throw new AppError('NFT not listed for sale', 400);
 
         const buyer = await User.findById(req.user._id).session(session);
-        if (buyer._id.toString() === nft.owner.toString()) {
-            throw new AppError('Cannot buy your own NFT', 400);
-        }
-
-        if (buyer.balance < nft.listPrice) {
-            throw new AppError('Insufficient balance', 400);
-        }
+        if (buyer._id.toString() === nft.owner.toString()) throw new AppError('Cannot buy your own NFT', 400);
+        if (buyer.balance < nft.listPrice) throw new AppError('Insufficient balance', 400);
 
         const seller = await User.findById(nft.owner).session(session);
         const series = nft.series;
         const price = nft.listPrice;
-
-        // Calculate royalty
         const royaltyAmount = Math.floor(price * (series.royaltyPercent / 100));
         const sellerReceives = price - royaltyAmount;
 
-        // Transfer funds
         buyer.balance -= price;
         seller.balance += sellerReceives;
         await buyer.save({ session });
         await seller.save({ session });
 
-        // Transfer NFT
         nft.owner = buyer._id;
         nft.isListed = false;
         nft.listPrice = 0;
         await nft.save({ session });
 
-        // Create order
         await Order.create([{
-            buyer: buyer._id,
-            seller: seller._id,
-            nft: nft._id,
-            price,
-            royaltyAmount,
-            type: 'secondary',
-            status: 'completed',
+            buyer: buyer._id, seller: seller._id, nft: nft._id, price, royaltyAmount, type: 'secondary', status: 'completed'
         }], { session });
 
-        // Referral for buyer
+        const tx = await Transaction.create([{
+            user: buyer._id, type: 'buy', amount: price, nft: nft._id, fromUser: seller._id, status: 'completed',
+            description: `Purchased: ${series.name} #${nft.mintNumber}`
+        }], { session });
+
+        await Transaction.create([{
+            user: seller._id, type: 'sell', amount: sellerReceives, nft: nft._id, toUser: buyer._id, status: 'completed',
+            description: `Sold: ${series.name} #${nft.mintNumber}`
+        }], { session });
+
         if (buyer.referredBy) {
             const commission = Math.floor(price * 0.02);
             if (commission > 0) {
@@ -376,34 +287,31 @@ router.post('/:id/buy', auth, validate(buySchema), asyncHandler(async (req, res)
             }
         }
 
-        await session.commitTransaction();
+        return { type: 'secondary', nft, buyer, seller, series, price, transaction: tx[0] };
+    });
 
-        // Emit real-time events
-        try {
-            const io = getIO();
-            const newTransaction = await Transaction.findOne({ user: buyer._id, nft: nft._id, status: 'completed' }).sort({ createdAt: -1 });
-            if (newTransaction) {
-                const activityPopulated = await Transaction.findById(newTransaction._id)
-                    .populate('user', 'username firstName')
-                    .populate({ path: 'nft', populate: { path: 'series', select: 'name slug imageUrl' } })
-                    .lean();
-                io.emit('activity:new', activityPopulated);
-            }
-            io.emit('nft:sold', { nftId: nft._id, buyer: buyer._id, price });
-        } catch (socketErr) {
-            console.error('Socket emit error:', socketErr);
+    try {
+        const io = getIO();
+        if (result.transaction) {
+            const activityPopulated = await Transaction.findById(result.transaction._id)
+                .populate('user', 'username firstName')
+                .populate({ path: 'nft', populate: { path: 'series', select: 'name slug imageUrl' } })
+                .lean();
+            io.emit('activity:new', activityPopulated);
         }
-
-        notifyPurchase(buyer.telegramId, seller.telegramId, series.name, nft.mintNumber, price / 1e9);
-        res.json({ success: true, nft });
-    } catch (error) {
-        if (session.inTransaction()) {
-            await session.abortTransaction();
-        }
-        throw error;
-    } finally {
-        session.endSession();
+        io.emit('nft:sold', { nftId: result.nft._id, buyer: result.buyer._id, price: result.type === 'primary' ? result.series.price : result.price });
+    } catch (socketErr) {
+        console.error('Socket emit error:', socketErr);
     }
+
+    notifyPurchase(
+        result.buyer.telegramId,
+        result.type === 'secondary' ? result.seller.telegramId : null,
+        result.series.name,
+        result.nft.mintNumber,
+        (result.type === 'primary' ? result.series.price : result.price) / 1e9
+    );
+    res.json({ success: true, nft: result.nft });
 }));
 
 // List NFT for secondary sale

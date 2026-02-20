@@ -20,7 +20,7 @@ function Countdown({ targetDate }) {
         update();
         const id = setInterval(update, 1000);
         return () => clearInterval(id);
-    });
+    }, [targetDate]);
     return <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{time}</span>;
 }
 
