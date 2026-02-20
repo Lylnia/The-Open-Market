@@ -71,9 +71,9 @@ router.post('/mint', auth, asyncHandler(async (req, res) => {
     let session = await mongoose.startSession();
     try {
         session.startTransaction();
-        const { seriesId, mintNumber } = req.body;
-        if (!seriesId || !mintNumber) {
-            throw new AppError('seriesId and mintNumber required', 400);
+        const { seriesId } = req.body;
+        if (!seriesId) {
+            throw new AppError('seriesId required', 400);
         }
 
         const series = await Series.findById(seriesId).session(session);
@@ -85,9 +85,17 @@ router.post('/mint', auth, asyncHandler(async (req, res) => {
             throw new AppError('Series sold out', 400);
         }
 
-        if (mintNumber < 1 || mintNumber > series.totalSupply) {
-            throw new AppError('Invalid mint number', 400);
+        // Generate fully random available mint number
+        const existingMints = await NFT.find({ series: seriesId }).select('mintNumber').lean().session(session);
+        const mintedSet = new Set(existingMints.map(n => n.mintNumber));
+        const availableItems = [];
+        for (let i = 1; i <= series.totalSupply; i++) {
+            if (!mintedSet.has(i)) availableItems.push(i);
         }
+
+        if (availableItems.length === 0) throw new AppError('Series sold out', 400);
+
+        const mintNumber = availableItems[Math.floor(Math.random() * availableItems.length)];
 
         const existing = await NFT.findOne({ series: seriesId, mintNumber }).session(session);
         if (existing) {

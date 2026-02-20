@@ -110,7 +110,6 @@ export default function Market() {
                                         </div>
                                         <div style={{ flex: 1 }}>
                                             <p style={{ fontWeight: 600, fontSize: 16 }}>{s?.name}</p>
-                                            <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{(s.price / 1e9).toFixed(2)} TON</p>
                                         </div>
                                     </div>
                                 </Link>

@@ -204,7 +204,27 @@ export default function NFTDetail() {
                         <div className="modal-handle" />
                         <h3 className="h3" style={{ marginBottom: 16 }}>{t('nft.list_for_sale')}</h3>
                         <input className="input" type="number" step="0.01" placeholder="TON" value={listPrice} onChange={e => setListPrice(e.target.value)} style={{ marginBottom: 16 }} />
-                        <button className="btn btn-primary btn-block" onClick={handleList} disabled={!listPrice || action}>{action === 'list' ? '...' : t('common.confirm')}</button>
+
+                        {listPrice > 0 && (
+                            <div className="card" style={{ padding: '12px', marginBottom: 16, background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                                <div className="flex justify-between" style={{ marginBottom: 4 }}>
+                                    <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Market Fee (5%)</span>
+                                    <span style={{ fontSize: 13, fontWeight: 500 }}>-{(listPrice * 0.05).toFixed(2)} TON</span>
+                                </div>
+                                <div className="flex justify-between" style={{ marginBottom: 12, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
+                                    <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Creator Royalty ({series.royaltyPercent}%)</span>
+                                    <span style={{ fontSize: 13, fontWeight: 500 }}>-{(listPrice * (series.royaltyPercent / 100)).toFixed(2)} TON</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span style={{ fontSize: 14, fontWeight: 600 }}>You Receive</span>
+                                    <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--success)' }}>
+                                        {(listPrice - (listPrice * 0.05) - (listPrice * (series.royaltyPercent / 100))).toFixed(2)} TON
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        <button className="btn btn-primary btn-block" onClick={handleList} disabled={!listPrice || listPrice <= 0 || action}>{action === 'list' ? '...' : t('common.confirm')}</button>
                     </div>
                 </div>
             )}

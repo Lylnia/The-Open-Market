@@ -87,27 +87,6 @@ export default function SeriesDetail() {
 
 
 
-            {/* Fixed Action Bottom Button */}
-            <div style={{ position: 'fixed', bottom: 32, left: 16, right: 16, zIndex: 50 }}>
-                {available > 0 ? (
-                    <button
-                        className="btn btn-primary btn-block"
-                        style={{ height: 50, fontSize: 17, borderRadius: 16, background: '#4DB8FF', color: '#FFFFFF', border: 'none' }}
-                        disabled={buyingMint || !user}
-                        onClick={handleBuy}
-                    >
-                        {buyingMint ? '...' : `Buy ${(data.price / 1e9).toFixed(2)} TON`}
-                    </button>
-                ) : (
-                    <button
-                        className="btn btn-primary btn-block"
-                        style={{ height: 50, fontSize: 17, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.6 }}
-                        disabled
-                    >
-                        Sold Out
-                    </button>
-                )}
-            </div>
         </div>
     );
 }

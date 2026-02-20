@@ -126,24 +126,36 @@ export default function Profile() {
             {/* My NFTs Header */}
             <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
                 <h2 style={{ fontSize: 20, fontWeight: 700 }}>My NFTs</h2>
-                <div style={{ background: 'var(--bg-card)', padding: '4px 12px', borderRadius: 100, fontSize: 13, fontWeight: 600 }}>
-                    {nfts?.length || 0}
-                </div>
+                <Link to="/inventory" style={{ textDecoration: 'none' }}>
+                    <div className="flex items-center gap-4" style={{ background: 'var(--bg-card)', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {nfts?.length || 0} SEEN <IconChevronRight size={14} />
+                    </div>
+                </Link>
             </div>
 
             {/* My NFTs Grid */}
             {nfts?.length > 0 ? (
-                <div className="grid-2">
-                    {nfts.slice(0, 4).map(nft => (
-                        <Link key={nft._id} to={`/nft/${nft._id}`} style={{ textDecoration: 'none' }}>
-                            <div className="card" style={{ padding: 0, borderRadius: 16 }}>
-                                <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-elevated)' }}>
-                                    {nft.series?.imageUrl && <img src={nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                <>
+                    <div className="grid-2">
+                        {nfts.slice(0, 4).map(nft => (
+                            <Link key={nft._id} to={`/nft/${nft._id}`} style={{ textDecoration: 'none' }}>
+                                <div className="card" style={{ padding: 0, borderRadius: 16 }}>
+                                    <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-elevated)' }}>
+                                        {nft.series?.imageUrl && <img src={nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                    </div>
+                                    <div style={{ padding: '8px 12px' }}>
+                                        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nft.series?.name} #{nft.mintNumber}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        </Link>
-                    ))}
-                </div>
+                            </Link>
+                        ))}
+                    </div>
+                    {nfts.length > 4 && (
+                        <div style={{ marginTop: 12, textAlign: 'center' }}>
+                            <Link to="/inventory" className="btn btn-secondary btn-block" style={{ borderRadius: 16 }}>Open Full Inventory</Link>
+                        </div>
+                    )}
+                </>
             ) : (
                 <div style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>
                     <p style={{ fontSize: 15 }}>No NFTs yet.</p>
