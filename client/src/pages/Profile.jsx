@@ -2,14 +2,21 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useApi } from '../hooks/useApi';
-import { IconWallet, IconHeart, IconHistory, IconTrophy, IconShield, IconChevronRight, IconCopy, IconLink } from '../assets/icons';
+import { IconWallet, IconHeart, IconHistory, IconTrophy, IconShield, IconChevronRight, IconCopy, IconLink, IconSettings, IconMoon, IconSun, IconLanguage } from '../assets/icons';
 import { useState } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function Profile() {
     const { t } = useTranslation();
     const { user } = useAuth();
     const { data: nfts } = useApi('/user/nfts');
     const [copied, setCopied] = useState(false);
+    const { theme, toggleTheme } = useTheme();
+    const { i18n } = useTranslation();
+
+    const toggleLanguage = () => {
+        i18n.changeLanguage(i18n.language === 'en' ? 'ru' : 'en');
+    };
 
     const copyReferral = () => {
         navigator.clipboard?.writeText(user?.referralCode || '');
@@ -67,7 +74,7 @@ export default function Profile() {
                     <Link key={to} to={to} style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="flex items-center gap-12" style={{
                             padding: '14px 16px',
-                            borderBottom: index !== menuItems.length - 1 ? '1px solid var(--border)' : 'none'
+                            borderBottom: '1px solid var(--border)'
                         }}>
                             <Icon size={22} style={{ color: 'var(--text-secondary)' }} />
                             <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>{label}</span>
@@ -76,6 +83,24 @@ export default function Profile() {
                         </div>
                     </Link>
                 ))}
+
+                {/* Theme Toggle */}
+                <div className="flex items-center gap-12" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', cursor: 'pointer' }} onClick={toggleTheme}>
+                    {theme === 'dark' ? <IconMoon size={22} style={{ color: 'var(--text-secondary)' }} /> : <IconSun size={22} style={{ color: 'var(--text-secondary)' }} />}
+                    <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>{t('profile.theme')}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        {theme === 'dark' ? t('profile.dark') : t('profile.light')}
+                    </span>
+                </div>
+
+                {/* Language Toggle */}
+                <div className="flex items-center gap-12" style={{ padding: '14px 16px', cursor: 'pointer' }} onClick={toggleLanguage}>
+                    <IconLanguage size={22} style={{ color: 'var(--text-secondary)' }} />
+                    <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>{t('profile.language')}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        {i18n.language === 'en' ? 'English' : 'Русский'}
+                    </span>
+                </div>
             </div>
 
             {/* Admin link */}
