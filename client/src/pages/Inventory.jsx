@@ -101,8 +101,6 @@ export default function Inventory() {
                         >
                             <option value="number_asc">Number: Ascending</option>
                             <option value="number_desc">Number: Descending</option>
-                            <option value="price_asc">Price: Ascending</option>
-                            <option value="price_desc">Price: Descending</option>
                         </select>
                     </div>
                 </div>

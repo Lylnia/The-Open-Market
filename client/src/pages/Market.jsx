@@ -37,11 +37,13 @@ export default function Market() {
             if (seriesId) params.series = seriesId;
 
             const res = await api.get('/nfts', { params });
+            const validNfts = res.data.nfts.filter(nft => nft.listPrice > 0);
+
             if (reset || pageNum === 1) {
-                setNfts(res.data.nfts);
+                setNfts(validNfts);
             } else {
                 setNfts(prev => {
-                    const newItems = res.data.nfts.filter(n => !prev.some(p => p._id === n._id));
+                    const newItems = validNfts.filter(n => !prev.some(p => p._id === n._id));
                     return [...prev, ...newItems];
                 });
             }

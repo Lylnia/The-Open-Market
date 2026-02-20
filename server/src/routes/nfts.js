@@ -59,15 +59,20 @@ router.get('/', asyncHandler(async (req, res) => {
     if (sort === 'number_desc') sortConfig = { mintNumber: -1, createdAt: -1 };
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const nfts = await NFT.find(filter)
+    let nfts = await NFT.find(filter)
         .populate('series', 'name slug imageUrl price collection')
         .populate('owner', 'username telegramId')
         .sort(sortConfig)
-        .skip(skip)
-        .limit(parseInt(limit))
         .lean();
 
-    const total = await NFT.countDocuments(filter);
+    // STRICT SAFETY NET: Just in case MongoDB index/cache returns ghost 0-price items
+    if (listed === 'true') {
+        nfts = nfts.filter(nft => nft.isListed === true && nft.listPrice > 0);
+    }
+
+    const total = nfts.length;
+    // Apply pagination manually after strict filtering
+    nfts = nfts.slice(skip, skip + parseInt(limit));
 
     res.json({
         nfts,

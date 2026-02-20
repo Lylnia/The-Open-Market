@@ -51,7 +51,10 @@ export default function NFTDetail() {
     };
 
     const handleList = async () => {
-        try { setAction('list'); await api.post(`/nfts/${id}/list`, { price: parseFloat(listPrice) * 1e9 }); setShowListModal(false); setListPrice(''); refetch(); }
+        const price = parseFloat(listPrice);
+        if (isNaN(price) || price <= 0) return showToast('Price must be greater than 0', 'error');
+
+        try { setAction('list'); await api.post(`/nfts/${id}/list`, { price: price * 1e9 }); setShowListModal(false); setListPrice(''); refetch(); }
         catch (e) { showToast(e?.error || 'Failed', 'error'); }
         finally { setAction(null); }
     };
@@ -224,7 +227,7 @@ export default function NFTDetail() {
                             </div>
                         )}
 
-                        <button className="btn btn-primary btn-block" onClick={handleList} disabled={!listPrice || listPrice <= 0 || action}>{action === 'list' ? '...' : t('common.confirm')}</button>
+                        <button className="btn btn-primary btn-block" onClick={handleList} disabled={!listPrice || parseFloat(listPrice) <= 0 || action}>{action === 'list' ? '...' : t('common.confirm')}</button>
                     </div>
                 </div>
             )}
