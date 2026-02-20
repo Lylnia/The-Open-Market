@@ -18,17 +18,42 @@ const router = express.Router();
 
 // List NFTs with filters
 router.get('/', asyncHandler(async (req, res) => {
-    const { series, owner, listed, page = 1, limit = 20 } = req.query;
+    const { series, collection, owner, listed, search, sort = 'descending', page = 1, limit = 20 } = req.query;
     const filter = {};
     if (series) filter.series = series;
     if (owner) filter.owner = owner;
     if (listed === 'true') filter.isListed = true;
 
+    if (collection) {
+        const seriesInCol = await Series.find({ collection }).select('_id').lean();
+        if (!filter.series) filter.series = { $in: seriesInCol.map(s => s._id) };
+    }
+
+    if (search && search.trim().length > 0) {
+        const matchingSeries = await Series.find({ name: { $regex: search, $options: 'i' } }).select('_id').lean();
+        const seriesIds = matchingSeries.map(s => s._id);
+        const searchNum = parseInt(search);
+
+        if (!isNaN(searchNum)) {
+            filter.$or = [
+                { series: { $in: seriesIds } },
+                { mintNumber: searchNum }
+            ];
+        } else if (seriesIds.length > 0) {
+            filter.series = filter.series ? { $in: seriesIds.filter(id => filter.series.$in?.includes(id) || filter.series === id) } : { $in: seriesIds };
+        } else {
+            // Nothing matches
+            filter._id = null;
+        }
+    }
+
+    const sortConfig = sort === 'ascending' ? { listPrice: 1, createdAt: 1 } : { listPrice: -1, createdAt: -1 };
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const nfts = await NFT.find(filter)
         .populate('series', 'name slug imageUrl price collection')
         .populate('owner', 'username telegramId')
-        .sort({ createdAt: -1 })
+        .sort(sortConfig)
         .skip(skip)
         .limit(parseInt(limit))
         .lean();

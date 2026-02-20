@@ -43,9 +43,9 @@ export default function SeriesDetail() {
     const availableItems = Array.from({ length: Math.min(100, available) }, (_, i) => data.mintedCount + i + 1);
 
     // Check if there is an active presale
-    const { data: presales } = useApi('/presale');
-    const isPresaleActive = presales?.some(p => p.series?._id === data._id && p.status === 'active');
-    const activePresale = presales?.find(p => p.series?._id === data._id && p.status === 'active');
+    const { data: presaleData } = useApi('/presale');
+    const isPresaleActive = presaleData?.active?.some(p => p.series?._id === data._id);
+    const activePresale = presaleData?.active?.find(p => p.series?._id === data._id);
 
     const handleBuy = async () => {
         if (!user) {
