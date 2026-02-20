@@ -53,7 +53,8 @@ router.get('/', asyncHandler(async (req, res) => {
         }
     }
 
-    let sortConfig = { listPrice: 1, createdAt: 1 };
+    let sortConfig = { listPrice: -1, createdAt: -1 };
+    if (sort === 'price_asc') sortConfig = { listPrice: 1, createdAt: 1 };
     if (sort === 'price_desc') sortConfig = { listPrice: -1, createdAt: -1 };
     if (sort === 'number_asc') sortConfig = { mintNumber: 1, createdAt: 1 };
     if (sort === 'number_desc') sortConfig = { mintNumber: -1, createdAt: -1 };
