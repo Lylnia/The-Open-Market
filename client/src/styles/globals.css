@@ -2,20 +2,20 @@
    The Open Market — Apple-Inspired Design System
    ═══════════════════════════════════════════════════ */
 
-/* ── Dark Theme ── */
+/* ── Dark Theme (Telegram Native) ── */
 :root[data-theme="dark"] {
   --bg-primary: #000000;
-  --bg-secondary: #0D0D0D;
-  --bg-card: rgba(28, 28, 30, 0.8);
-  --bg-elevated: #1C1C1E;
-  --bg-nav: rgba(18, 18, 18, 0.72);
-  --bg-input: rgba(44, 44, 46, 0.6);
-  --bg-glass: rgba(255, 255, 255, 0.06);
+  --bg-secondary: #0F0F0F;
+  --bg-card: #1C1C1E;
+  --bg-elevated: #2C2C2E;
+  --bg-nav: rgba(0, 0, 0, 0.85);
+  --bg-input: #2C2C2E;
+  --bg-glass: rgba(255, 255, 255, 0.04);
   --text-primary: #FFFFFF;
-  --text-secondary: rgba(235, 235, 245, 0.6);
-  --text-muted: rgba(235, 235, 245, 0.3);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-light: rgba(255, 255, 255, 0.04);
+  --text-secondary: #8E8E93;
+  --text-muted: #636366;
+  --border: #38383A;
+  --border-light: rgba(255, 255, 255, 0.08);
   --accent: #0A84FF;
   --accent-dim: rgba(10, 132, 255, 0.15);
   --accent-text: #FFFFFF;
@@ -133,7 +133,7 @@ select {
 }
 
 .h2 {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.4px;
   line-height: 1.2;
@@ -168,10 +168,12 @@ select {
 
 /* ── Utility ── */
 .page {
-  padding: 20px 16px;
+  padding: 16px;
   padding-bottom: 110px;
   min-height: 100vh;
   min-height: 100dvh;
+  max-width: 600px;
+  margin: 0 auto;
   animation: pageIn 0.35s ease-out;
 }
 
@@ -244,39 +246,21 @@ select {
   color: var(--text-muted);
 }
 
-/* ── Card (Glassmorphism) ── */
+/* ── Card (Solid iOS/Telegram) ── */
 .card {
   background: var(--bg-card);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
   border-radius: 16px;
   padding: 16px;
-  box-shadow: var(--shadow-card);
-  transition: transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    box-shadow 0.22s ease;
-  position: relative;
+  transition: transform 0.2s ease, background 0.2s ease;
   overflow: hidden;
 }
 
-.card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
 .card:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
+  background: var(--bg-elevated);
 }
 
-/* ── Button (iOS-style) ── */
+/* ── Button (Pill & iOS) ── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -290,6 +274,22 @@ select {
   transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   position: relative;
   overflow: hidden;
+}
+
+.btn-pill {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border-radius: 100px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-pill:active {
+  background: var(--border);
+  transform: scale(0.96);
 }
 
 .btn::after {
@@ -307,12 +307,11 @@ select {
 .btn-primary {
   background: var(--accent);
   color: var(--accent-text);
-  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);
 }
 
 .btn-primary:active {
   transform: scale(0.96);
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
+  opacity: 0.9;
 }
 
 .btn-secondary {

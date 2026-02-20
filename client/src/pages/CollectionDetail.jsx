@@ -28,41 +28,41 @@ export default function CollectionDetail() {
 
                 {/* Stats */}
                 {data.stats && (
-                    <div className="flex gap-12" style={{ marginBottom: 24, overflowX: 'auto' }}>
+                    <div className="flex gap-12" style={{ marginBottom: 32, overflowX: 'auto', paddingBottom: 4 }}>
                         {[
-                            { label: t('collection.floor'), value: `${(data.stats.floorPrice / 1e9).toFixed(2)} TON` },
-                            { label: t('collection.volume'), value: `${(data.stats.totalVolume / 1e9).toFixed(0)} TON` },
-                            { label: t('collection.owners'), value: data.stats.ownerCount },
-                            { label: t('collection.supply'), value: data.stats.totalSupply },
+                            { label: 'FLOOR', value: `${(data.stats.floorPrice / 1e9).toFixed(2)} TON` },
+                            { label: 'VOLUME', value: `${(data.stats.totalVolume / 1e9).toFixed(0)} TON` },
+                            { label: 'OWNERS', value: data.stats.ownerCount },
+                            { label: 'SUPPLY', value: data.stats.totalSupply },
                         ].map(({ label, value }) => (
-                            <div key={label} className="card" style={{ padding: '12px 16px', minWidth: 90, textAlign: 'center', flexShrink: 0 }}>
-                                <p className="stat-value" style={{ fontSize: 16 }}>{value}</p>
-                                <p className="stat-label">{label}</p>
+                            <div key={label} className="card" style={{ padding: '16px', minWidth: 100, textAlign: 'center', flexShrink: 0, borderRadius: 16 }}>
+                                <p style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.3px', marginBottom: 2 }}>{value}</p>
+                                <p className="overline" style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{label}</p>
                             </div>
                         ))}
                     </div>
                 )}
 
                 {/* Series */}
-                <h2 className="section-title" style={{ marginBottom: 12 }}>{t('collection.series')}</h2>
-                <div className="flex-col gap-12">
-                    {data.series?.map(s => {
+                <h2 className="section-title" style={{ marginBottom: 16, fontSize: 20 }}>Series in Collection</h2>
+                <div className="card" style={{ padding: 0 }}>
+                    {data.series?.map((s, idx) => {
                         const available = s.totalSupply - s.mintedCount;
                         return (
                             <Link key={s._id} to={`/series/${s.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                <div className="card flex gap-12" style={{ padding: 12 }}>
-                                    <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-elevated)', flexShrink: 0 }}>
+                                <div className="flex gap-12" style={{ padding: '16px', borderBottom: idx !== data.series.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                                    <div style={{ width: 80, height: 80, borderRadius: 16, overflow: 'hidden', background: 'var(--bg-elevated)', flexShrink: 0 }}>
                                         {s.imageUrl && <img src={s.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                                     </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div className="flex items-center gap-8" style={{ marginBottom: 4 }}>
-                                            <p style={{ fontWeight: 600, fontSize: 15 }}>{s.name}</p>
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                        <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
+                                            <p style={{ fontWeight: 600, fontSize: 17, letterSpacing: '-0.3px' }}>{s.name}</p>
                                             <span className={`badge badge-${s.rarity}`}>{s.rarity}</span>
                                         </div>
-                                        <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{(s.price / 1e9).toFixed(2)} TON</p>
-                                        <div className="flex items-center gap-8">
-                                            <span className="caption">{t('series.available')}: {available}</span>
-                                            <span className="caption">{t('collection.supply')}: {s.totalSupply}</span>
+                                        <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--accent)', marginBottom: 6 }}>{(s.price / 1e9).toFixed(2)} TON</p>
+                                        <div className="flex items-center gap-12">
+                                            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Available: <strong style={{ color: 'var(--text-primary)' }}>{available}</strong></span>
+                                            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Supply: <strong style={{ color: 'var(--text-primary)' }}>{s.totalSupply}</strong></span>
                                         </div>
                                     </div>
                                 </div>
