@@ -52,29 +52,30 @@ export default function Profile() {
             </div>
 
             {/* General Settings Card (Telegram Grouped List Style) */}
-            <div className="card" style={{ padding: 0, marginBottom: 24 }}>
+            <div className="card" style={{ padding: 0, marginBottom: 24, borderRadius: 16 }}>
                 {/* Referral Code */}
                 {user?.referralCode && (
-                    <div className="flex items-center justify-between" style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                    <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
                         <div className="flex items-center gap-12">
                             <IconLink size={20} style={{ color: 'var(--text-secondary)' }} />
                             <div>
                                 <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Referral Code</p>
-                                <p style={{ fontSize: 16, fontWeight: 600, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{user.referralCode}</p>
+                                <p style={{ fontSize: 15, fontWeight: 600, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{user.referralCode}</p>
                             </div>
                         </div>
                         <button className="btn-pill" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={copyReferral}>
-                            <IconCopy size={12} />
+                            <IconCopy size={14} />
                             {copied ? 'COPIED' : 'COPY'}
                         </button>
                     </div>
                 )}
 
+                {/* Profile Links */}
                 {menuItems.map(({ to, icon: Icon, label, value }, index) => (
                     <Link key={to} to={to} style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="flex items-center gap-12" style={{
                             padding: '14px 16px',
-                            borderBottom: '1px solid var(--border)'
+                            borderBottom: index !== menuItems.length - 1 ? '1px solid var(--border)' : 'none'
                         }}>
                             <Icon size={22} style={{ color: 'var(--text-secondary)' }} />
                             <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>{label}</span>
@@ -83,7 +84,11 @@ export default function Profile() {
                         </div>
                     </Link>
                 ))}
+            </div>
 
+            {/* App Preferences */}
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, paddingLeft: 16, textTransform: 'uppercase' }}>{t('nav.settings', 'App Settings')}</h3>
+            <div className="card" style={{ padding: 0, marginBottom: 24, borderRadius: 16 }}>
                 {/* Theme Toggle */}
                 <div className="flex items-center gap-12" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', cursor: 'pointer' }} onClick={toggleTheme}>
                     {theme === 'dark' ? <IconMoon size={22} style={{ color: 'var(--text-secondary)' }} /> : <IconSun size={22} style={{ color: 'var(--text-secondary)' }} />}

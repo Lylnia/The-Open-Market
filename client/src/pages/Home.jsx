@@ -16,11 +16,38 @@ export default function Home() {
     return (
         <PullToRefresh onRefresh={handleRefresh}>
             <div className="page" style={{ paddingTop: 12 }}>
-                {/* Collections Section (Now named Latest Series) */}
+                {/* Main banner (Featured) */}
+                <div className="section-header" style={{ marginBottom: 16 }}>
+                    <h2 className="h2" style={{ fontSize: 22 }}>Collections</h2>
+                    <Link to="/market" style={{ fontSize: 15, fontWeight: 500, color: 'var(--accent)' }}>More</Link>
+                </div>
+                {!loading && collections?.length > 0 && (
+                    <div style={{ marginBottom: 32 }}>
+                        <Link to={`/collection/${collections[0].slug}`} style={{ textDecoration: 'none' }}>
+                            <div style={{
+                                borderRadius: 20, overflow: 'hidden', position: 'relative',
+                                background: 'var(--bg-card)', height: 200,
+                            }}>
+                                {collections[0].bannerUrl ? (
+                                    <img src={collections[0].bannerUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1C1C1E, #2C2C2E)' }} />
+                                )}
+                                <div style={{
+                                    position: 'absolute', bottom: 0, left: 0, right: 0,
+                                    padding: '32px 16px 16px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))',
+                                }}>
+                                    <h2 style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.5px' }}>{collections[0].name}</h2>
+                                </div>
+                            </div>
+                        </Link>
+                    </div>
+                )}
+
+                {/* Latest Series Section */}
                 <section className="section" style={{ marginBottom: 24 }}>
                     <div className="section-header" style={{ marginBottom: 16 }}>
                         <h2 className="h2" style={{ fontSize: 22 }}>Latest Series</h2>
-                        <Link to="/market" style={{ fontSize: 15, fontWeight: 500, color: 'var(--accent)' }}>More</Link>
                     </div>
 
                     {loading ? (
@@ -71,30 +98,6 @@ export default function Home() {
                         </div>
                     )}
                 </section>
-
-                {/* Main banner */}
-                {!loading && collections?.length > 0 && (
-                    <div style={{ marginBottom: 32 }}>
-                        <Link to={`/collection/${collections[0].slug}`} style={{ textDecoration: 'none' }}>
-                            <div style={{
-                                borderRadius: 20, overflow: 'hidden', position: 'relative',
-                                background: 'var(--bg-card)', height: 200,
-                            }}>
-                                {collections[0].bannerUrl ? (
-                                    <img src={collections[0].bannerUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1C1C1E, #2C2C2E)' }} />
-                                )}
-                                <div style={{
-                                    position: 'absolute', bottom: 0, left: 0, right: 0,
-                                    padding: '32px 16px 16px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))',
-                                }}>
-                                    <h2 style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.5px' }}>{collections[0].name}</h2>
-                                </div>
-                            </div>
-                        </Link>
-                    </div>
-                )}
 
 
                 {/* Activity Feed */}
