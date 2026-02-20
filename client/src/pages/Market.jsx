@@ -84,14 +84,14 @@ export default function Market() {
             {/* Search results */}
             {search.length >= 2 && searchResults && (
                 <div style={{ marginBottom: 24 }}>
-                    {searchResults.collections?.length > 0 && (
+                    {(searchResults.collections || []).length > 0 && (
                         <div className="card" style={{ padding: 0, marginBottom: 16 }}>
                             <p className="overline" style={{ padding: '16px 16px 8px', color: 'var(--text-secondary)' }}>COLLECTIONS</p>
-                            {searchResults.collections.map((col, idx) => (
+                            {(searchResults.collections || []).map((col, idx) => (
                                 <Link key={col._id} to={`/collection/${col.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                    <div className="flex items-center gap-12" style={{ padding: '12px 16px', borderBottom: idx !== searchResults.collections.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                                    <div className="flex items-center gap-12" style={{ padding: '12px 16px', borderBottom: idx !== (searchResults.collections || []).length - 1 ? '1px solid var(--border)' : 'none' }}>
                                         <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-elevated)', overflow: 'hidden' }}>
-                                            {col.logoUrl && <img src={col.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                            {col?.logoUrl && <img src={col.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                                         </div>
                                         <p style={{ fontWeight: 600, fontSize: 16 }}>{col.name}</p>
                                     </div>
@@ -99,17 +99,17 @@ export default function Market() {
                             ))}
                         </div>
                     )}
-                    {searchResults.series?.length > 0 && (
+                    {(searchResults.series || []).length > 0 && (
                         <div className="card" style={{ padding: 0 }}>
                             <p className="overline" style={{ padding: '16px 16px 8px', color: 'var(--text-secondary)' }}>SERIES</p>
-                            {searchResults.series.map((s, idx) => (
+                            {(searchResults.series || []).map((s, idx) => (
                                 <Link key={s._id} to={`/series/${s.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                    <div className="flex items-center gap-12" style={{ padding: '12px 16px', borderBottom: idx !== searchResults.series.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                                    <div className="flex items-center gap-12" style={{ padding: '12px 16px', borderBottom: idx !== (searchResults.series || []).length - 1 ? '1px solid var(--border)' : 'none' }}>
                                         <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-elevated)', overflow: 'hidden' }}>
-                                            {s.imageUrl && <img src={s.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                            {s?.imageUrl && <img src={s.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                                         </div>
                                         <div style={{ flex: 1 }}>
-                                            <p style={{ fontWeight: 600, fontSize: 16 }}>{s.name}</p>
+                                            <p style={{ fontWeight: 600, fontSize: 16 }}>{s?.name}</p>
                                             <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{(s.price / 1e9).toFixed(2)} TON</p>
                                         </div>
                                         <span className={`badge badge-${s.rarity}`} style={{ alignSelf: 'center' }}>{s.rarity}</span>
@@ -125,20 +125,20 @@ export default function Market() {
             {search.length < 2 && (
                 <>
                     <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Listed NFTs</h2>
-                    {nfts.length === 0 && isLoading ? (
+                    {(nfts || []).length === 0 && isLoading ? (
                         <div className="grid-2">{[1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 180, borderRadius: 16 }} />)}</div>
-                    ) : nfts.length > 0 ? (
+                    ) : (nfts || []).length > 0 ? (
                         <div className="grid-2">
-                            {nfts.map((nft, idx) => {
-                                const isLastElement = nfts.length === idx + 1;
+                            {(nfts || []).map((nft, idx) => {
+                                const isLastElement = (nfts || []).length === idx + 1;
                                 return (
                                     <Link ref={isLastElement ? lastElementRef : null} key={`${nft._id}-${idx}`} to={`/nft/${nft._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                                         <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 16 }}>
                                             <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)' }}>
-                                                {nft.series?.imageUrl && <img src={nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                                {nft?.series?.imageUrl && <img src={nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                                             </div>
                                             <div style={{ padding: '12px' }}>
-                                                <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nft.series?.name} #{nft.mintNumber}</p>
+                                                <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nft?.series?.name} #{nft?.mintNumber}</p>
                                                 <div className="flex items-center justify-between">
                                                     <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.3px' }}>{(nft.listPrice / 1e9).toFixed(2)} TON</span>
                                                     <span className={`badge badge-${nft.series?.rarity}`} style={{ fontSize: 9 }}>{nft.series?.rarity}</span>

@@ -97,7 +97,7 @@ export default function Home() {
                         </div>
                     ) : (
                         <div className="flex-col gap-16">
-                            {collections?.slice(0, 1).map(col => (
+                            {(collections || []).slice(0, 1).map(col => (
                                 <div key={col._id} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-8">
@@ -150,14 +150,14 @@ export default function Home() {
                         <div className="flex-col gap-8">
                             {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 12 }} />)}
                         </div>
-                    ) : activities.length > 0 ? (
+                    ) : (activities || []).length > 0 ? (
                         <>
                             <div className="card" style={{ padding: 0 }}>
-                                {activities.map((tx, i) => (
+                                {(activities || []).map((tx, i) => (
                                     <div key={i} className="flex items-center justify-between" style={{ padding: '12px 16px', borderBottom: i !== activities.length - 1 ? '1px solid var(--border)' : 'none' }}>
                                         <div className="flex items-center gap-12">
                                             <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg-elevated)', overflow: 'hidden', flexShrink: 0 }}>
-                                                {tx.nft?.series?.imageUrl && <img src={tx.nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                                {tx?.nft?.series?.imageUrl && <img src={tx.nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                                             </div>
                                             <div>
                                                 <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)' }}>
