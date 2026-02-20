@@ -81,7 +81,20 @@ router.post('/:id/buy', auth, async (req, res) => {
             return res.status(400).json({ error: 'Series sold out' });
         }
 
-        const mintNumber = series.mintedCount + 1;
+        // Generate fully random available mint number
+        const existingMints = await NFT.find({ series: series._id }).select('mintNumber').lean().session(session);
+        const mintedSet = new Set(existingMints.map(n => n.mintNumber));
+        const availableItems = [];
+        for (let i = 1; i <= series.totalSupply; i++) {
+            if (!mintedSet.has(i)) availableItems.push(i);
+        }
+
+        if (availableItems.length === 0) {
+            await session.abortTransaction();
+            return res.status(400).json({ error: 'Series sold out' });
+        }
+
+        const mintNumber = availableItems[Math.floor(Math.random() * availableItems.length)];
 
         // Deduct balance
         buyer.balance -= presale.price;

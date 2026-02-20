@@ -125,12 +125,15 @@ export default function Profile() {
 
             {/* My NFTs Header */}
             <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
-                <h2 style={{ fontSize: 20, fontWeight: 700 }}>My NFTs</h2>
-                <Link to="/inventory" style={{ textDecoration: 'none' }}>
-                    <div className="flex items-center gap-4" style={{ background: 'var(--bg-card)', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {nfts?.length || 0} SEEN <IconChevronRight size={14} />
+                <Link to="/inventory" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <div className="flex items-center gap-8">
+                        <h2 style={{ fontSize: 20, fontWeight: 700 }}>My NFTs</h2>
+                        <IconChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
                     </div>
                 </Link>
+                <div style={{ background: 'var(--bg-card)', padding: '4px 12px', borderRadius: 100, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {nfts?.length || 0}
+                </div>
             </div>
 
             {/* My NFTs Grid */}
@@ -150,11 +153,6 @@ export default function Profile() {
                             </Link>
                         ))}
                     </div>
-                    {nfts.length > 4 && (
-                        <div style={{ marginTop: 12, textAlign: 'center' }}>
-                            <Link to="/inventory" className="btn btn-secondary btn-block" style={{ borderRadius: 16 }}>Open Full Inventory</Link>
-                        </div>
-                    )}
                 </>
             ) : (
                 <div style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>

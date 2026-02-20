@@ -42,6 +42,11 @@ export default function SeriesDetail() {
     // Create available blanks
     const availableItems = Array.from({ length: Math.min(100, available) }, (_, i) => data.mintedCount + i + 1);
 
+    // Check if there is an active presale
+    const { data: presales } = useApi('/presale');
+    const isPresaleActive = presales?.some(p => p.series?._id === data._id && p.status === 'active');
+    const activePresale = presales?.find(p => p.series?._id === data._id && p.status === 'active');
+
     const handleBuy = async () => {
         if (!user) {
             navigate('/profile');
@@ -85,7 +90,26 @@ export default function SeriesDetail() {
                 {data.imageUrl ? <img src={data.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <div className="skeleton" style={{ width: '100%', height: '100%' }} />}
             </div>
 
-
+            {/* Fixed Action Bottom Button */}
+            <div style={{ position: 'fixed', bottom: 32, left: 16, right: 16, zIndex: 50 }}>
+                {isPresaleActive ? (
+                    <button
+                        className="btn btn-primary btn-block"
+                        style={{ height: 50, fontSize: 17, borderRadius: 16, background: '#4DB8FF', color: '#FFFFFF', border: 'none' }}
+                        onClick={() => navigate(`/presale`)}
+                    >
+                        Pre Sale {(activePresale?.price / 1e9).toFixed(2)} TON
+                    </button>
+                ) : (
+                    <button
+                        className="btn btn-secondary btn-block"
+                        style={{ height: 50, fontSize: 17, borderRadius: 16 }}
+                        onClick={() => navigate(`/market?series=${data._id}`)}
+                    >
+                        Get on Market
+                    </button>
+                )}
+            </div>
 
         </div>
     );
