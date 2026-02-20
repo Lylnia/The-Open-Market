@@ -1,12 +1,26 @@
-import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+import { useTelegram } from '../hooks/useTelegram';
+import { useEffect } from 'react';
 
 export default function CollectionDetail() {
     const { slug } = useParams();
+    const navigate = useNavigate();
     const { t } = useTranslation();
     const { data, loading } = useApi(`/collections/${slug}`);
+    const { tg, showBackButton } = useTelegram();
+
+    useEffect(() => {
+        showBackButton(true);
+        const handleBack = () => { navigate(-1); };
+        tg?.BackButton?.onClick(handleBack);
+
+        return () => {
+            showBackButton(false);
+            tg?.BackButton?.offClick(handleBack);
+        };
+    }, []);
 
     if (loading) return <div className="page"><div className="loading-center"><div className="spinner" /></div></div>;
     if (!data) return <div className="page"><p>{t('common.error')}</p></div>;
@@ -30,10 +44,8 @@ export default function CollectionDetail() {
                 {data.stats && (
                     <div className="flex gap-12" style={{ marginBottom: 32, overflowX: 'auto', paddingBottom: 4 }}>
                         {[
-                            { label: 'FLOOR', value: `${(data.stats.floorPrice / 1e9).toFixed(2)} TON` },
-                            { label: 'VOLUME', value: `${(data.stats.totalVolume / 1e9).toFixed(0)} TON` },
-                            { label: 'OWNERS', value: data.stats.ownerCount },
-                            { label: 'SUPPLY', value: data.stats.totalSupply },
+                            { label: 'SERIES', value: data.series?.length || 0 },
+                            { label: 'VOLUME', value: `${(data.stats.totalVolume / 1e9).toFixed(0)} TON` }
                         ].map(({ label, value }) => (
                             <div key={label} className="card" style={{ padding: '16px', minWidth: 100, textAlign: 'center', flexShrink: 0, borderRadius: 16 }}>
                                 <p style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.3px', marginBottom: 2 }}>{value}</p>
@@ -57,11 +69,9 @@ export default function CollectionDetail() {
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                         <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
                                             <p style={{ fontWeight: 600, fontSize: 17, letterSpacing: '-0.3px' }}>{s.name}</p>
-                                            <span className={`badge badge-${s.rarity}`}>{s.rarity}</span>
                                         </div>
                                         <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--accent)', marginBottom: 6 }}>{(s.price / 1e9).toFixed(2)} TON</p>
                                         <div className="flex items-center gap-12">
-                                            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Available: <strong style={{ color: 'var(--text-primary)' }}>{available}</strong></span>
                                             <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Supply: <strong style={{ color: 'var(--text-primary)' }}>{s.totalSupply}</strong></span>
                                         </div>
                                     </div>

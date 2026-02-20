@@ -36,7 +36,6 @@ export default function Favorites() {
                                         <p style={{ fontWeight: 600, fontSize: 14 }}>{target.name}</p>
                                         {target.price && <p className="caption">{(target.price / 1e9).toFixed(2)} TON</p>}
                                     </div>
-                                    {target.rarity && <span className={`badge badge-${target.rarity}`}>{target.rarity}</span>}
                                 </div>
                             </Link>
                         );

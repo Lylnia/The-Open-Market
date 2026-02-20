@@ -26,7 +26,7 @@ router.get('/', asyncHandler(async (req, res) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const nfts = await NFT.find(filter)
-        .populate('series', 'name slug imageUrl price rarity collection')
+        .populate('series', 'name slug imageUrl price collection')
         .populate('owner', 'username telegramId')
         .sort({ createdAt: -1 })
         .skip(skip)

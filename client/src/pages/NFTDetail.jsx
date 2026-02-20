@@ -79,7 +79,6 @@ export default function NFTDetail() {
                     <span className="badge" style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontWeight: 600 }}>
                         SUPPLY {series.totalSupply}
                     </span>
-                    <span className={`badge badge-${series.rarity}`}>{series.rarity}</span>
                 </div>
             </div>
 

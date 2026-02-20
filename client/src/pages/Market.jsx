@@ -112,7 +112,6 @@ export default function Market() {
                                             <p style={{ fontWeight: 600, fontSize: 16 }}>{s?.name}</p>
                                             <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{(s.price / 1e9).toFixed(2)} TON</p>
                                         </div>
-                                        <span className={`badge badge-${s.rarity}`} style={{ alignSelf: 'center' }}>{s.rarity}</span>
                                     </div>
                                 </Link>
                             ))}
@@ -141,7 +140,6 @@ export default function Market() {
                                                 <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nft?.series?.name} #{nft?.mintNumber}</p>
                                                 <div className="flex items-center justify-between">
                                                     <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.3px' }}>{(nft.listPrice / 1e9).toFixed(2)} TON</span>
-                                                    <span className={`badge badge-${nft.series?.rarity}`} style={{ fontSize: 9 }}>{nft.series?.rarity}</span>
                                                 </div>
                                             </div>
                                         </div>

@@ -42,7 +42,7 @@ router.get('/stats', async (req, res) => {
 // ===== FIELD WHITELISTS =====
 const pick = (obj, keys) => keys.reduce((o, k) => { if (obj[k] !== undefined) o[k] = obj[k]; return o; }, {});
 const COLLECTION_FIELDS = ['name', 'slug', 'logoUrl', 'bannerUrl', 'order', 'isActive', 'description'];
-const SERIES_FIELDS = ['name', 'slug', 'collection', 'imageUrl', 'price', 'totalSupply', 'rarity', 'royaltyPercent', 'isActive', 'description', 'attributes'];
+const SERIES_FIELDS = ['name', 'slug', 'collection', 'imageUrl', 'price', 'totalSupply', 'royaltyPercent', 'isActive', 'description', 'attributes'];
 const USER_EDITABLE_FIELDS = ['isAdmin', 'balance'];
 
 // ===== COLLECTIONS CRUD =====
@@ -83,8 +83,8 @@ router.get('/series', async (req, res) => {
 router.post('/series', async (req, res) => {
     try {
         const data = pick(req.body, SERIES_FIELDS);
-        if (!data.name || !data.slug || !data.collection || !data.price || !data.totalSupply) {
-            return res.status(400).json({ error: 'name, slug, collection, price, and totalSupply are required' });
+        if (!data.name || !data.slug || !data.collection || !data.totalSupply) {
+            return res.status(400).json({ error: 'name, slug, collection, and totalSupply are required' });
         }
         res.json(await Series.create(data));
     } catch (e) { res.status(500).json({ error: e.message }); }

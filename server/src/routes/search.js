@@ -15,7 +15,7 @@ router.get('/', asyncHandler(async (req, res) => {
 
     const [collections, series] = await Promise.all([
         Collection.find({ name: regex, isActive: true }).select('name slug logoUrl').limit(parseInt(limit)).lean(),
-        Series.find({ name: regex, isActive: true }).select('name slug imageUrl price rarity').populate('collection', 'name slug').limit(parseInt(limit)).lean(),
+        Series.find({ name: regex, isActive: true }).select('name slug imageUrl price').populate('collection', 'name slug').limit(parseInt(limit)).lean(),
     ]);
 
     res.json({ collections, series });

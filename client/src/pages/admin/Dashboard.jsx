@@ -81,7 +81,7 @@ function CollectionForm({ onSuccess, editData, onCancel }) {
 function SeriesForm({ collections, onSuccess, editData, onCancel }) {
     const [form, setForm] = useState(editData || {
         name: '', slug: '', collection: '', imageUrl: '', price: '',
-        totalSupply: '', rarity: 'common', royaltyPercent: 5, isActive: true,
+        totalSupply: '', royaltyPercent: 5, isActive: true,
         description: { tr: '', en: '', ru: '' },
     });
     const [loading, setLoading] = useState(false);
@@ -90,7 +90,7 @@ function SeriesForm({ collections, onSuccess, editData, onCancel }) {
     const handleSubmit = async () => {
         try {
             setLoading(true);
-            const payload = { ...form, price: Math.round(parseFloat(form.price) * 1e9), totalSupply: parseInt(form.totalSupply) };
+            const payload = { ...form, price: form.price ? Math.round(parseFloat(form.price) * 1e9) : 0, totalSupply: parseInt(form.totalSupply) };
             if (editData?._id) {
                 await api.put(`/admin/series/${editData._id}`, payload);
             } else {
@@ -122,20 +122,13 @@ function SeriesForm({ collections, onSuccess, editData, onCancel }) {
             <Field label="Görsel URL">
                 <input className="input" value={form.imageUrl} onChange={e => set('imageUrl', e.target.value)} placeholder="https://..." />
             </Field>
-            <Field label="Fiyat (TON) *">
-                <input className="input" type="number" step="0.01" value={form.price} onChange={e => set('price', e.target.value)} placeholder="Örn: 2.5" />
+            <Field label="Fiyat (TON)">
+                <input className="input" type="number" step="0.01" value={form.price} onChange={e => set('price', e.target.value)} placeholder="Opsiyonel (Örn: 2.5)" />
             </Field>
             <Field label="Toplam Arz *">
                 <input className="input" type="number" value={form.totalSupply} onChange={e => set('totalSupply', e.target.value)} placeholder="Örn: 100" />
             </Field>
-            <Field label="Nadirlik *">
-                <select className="input" value={form.rarity} onChange={e => set('rarity', e.target.value)}>
-                    <option value="common">Common (Yaygın)</option>
-                    <option value="rare">Rare (Nadir)</option>
-                    <option value="epic">Epic (Epik)</option>
-                    <option value="legendary">Legendary (Efsanevi)</option>
-                </select>
-            </Field>
+
             <Field label="Royalty % (2. el satış komisyonu)">
                 <input className="input" type="number" step="1" min="0" max="50" value={form.royaltyPercent} onChange={e => set('royaltyPercent', parseInt(e.target.value) || 0)} />
             </Field>
@@ -150,7 +143,7 @@ function SeriesForm({ collections, onSuccess, editData, onCancel }) {
             </Field>
             <div className="flex gap-8">
                 <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit}
-                    disabled={loading || !form.name || !form.slug || !form.collection || !form.price || !form.totalSupply}>
+                    disabled={loading || !form.name || !form.slug || !form.collection || !form.totalSupply}>
                     {loading ? '...' : editData ? 'Kaydet' : 'Oluştur'}
                 </button>
                 {onCancel && <button className="btn btn-secondary" onClick={onCancel}>İptal</button>}
@@ -397,7 +390,6 @@ export default function Dashboard() {
                                         <div>
                                             <div className="flex items-center gap-8">
                                                 <p style={{ fontWeight: 600 }}>{s.name}</p>
-                                                <span className={`badge badge-${s.rarity}`} style={{ fontSize: 8 }}>{s.rarity}</span>
                                             </div>
                                             <p className="caption">{s.collection?.name} — {s.mintedCount}/{s.totalSupply} — {(s.price / 1e9).toFixed(2)} TON — Royalty: {s.royaltyPercent}%</p>
                                         </div>

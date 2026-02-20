@@ -19,7 +19,7 @@ router.get('/', auth, async (req, res) => {
             if (fav.targetType === 'collection') {
                 fav.targetData = await Collection.findById(fav.target).select('name slug logoUrl').lean();
             } else {
-                fav.targetData = await Series.findById(fav.target).select('name slug imageUrl price rarity').lean();
+                fav.targetData = await Series.findById(fav.target).select('name slug imageUrl price').lean();
             }
             return fav;
         }));
