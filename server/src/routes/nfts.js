@@ -34,15 +34,18 @@ router.get('/', asyncHandler(async (req, res) => {
         const seriesIds = matchingSeries.map(s => s._id);
         const searchNum = parseInt(search);
 
+        const searchConditions = [];
         if (!isNaN(searchNum)) {
-            filter.$or = [
-                { series: { $in: seriesIds } },
-                { mintNumber: searchNum }
-            ];
-        } else if (seriesIds.length > 0) {
-            filter.series = filter.series ? { $in: seriesIds.filter(id => filter.series.$in?.includes(id) || filter.series === id) } : { $in: seriesIds };
+            searchConditions.push({ mintNumber: searchNum });
+        }
+        if (seriesIds.length > 0) {
+            searchConditions.push({ series: { $in: seriesIds } });
+        }
+
+        if (searchConditions.length > 0) {
+            filter.$and = filter.$and || [];
+            filter.$and.push({ $or: searchConditions });
         } else {
-            // Nothing matches
             filter._id = null;
         }
     }
