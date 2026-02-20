@@ -116,7 +116,7 @@ export default function Home() {
                                             GET ON MARKET
                                         </Link>
                                     ) : (
-                                        <Link to="/presale" className="btn-pill" style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: 'none' }}>
+                                        <Link to="/presale" className="btn-pill" style={{ background: '#4DB8FF', color: '#FFFFFF', border: 'none' }}>
                                             {(latestPresale.price / 1e9).toFixed(2)} TON
                                         </Link>
                                     )}

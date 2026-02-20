@@ -53,57 +53,42 @@ export default function NFTDetail() {
     };
 
     return (
-        <div className="page-flush">
-            {/* Image */}
-            <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-card)', overflow: 'hidden' }}>
-                {series.imageUrl && <img src={series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+        <div className="page" style={{ paddingBottom: 120 }}>
+            {/* Header Text */}
+            <div style={{ padding: '8px 16px', marginBottom: 12 }}>
+                <h1 className="h1" style={{ fontSize: 26, letterSpacing: '-0.5px', marginBottom: 2 }}>{series.name} #{nft.mintNumber}</h1>
+                <Link to={`/collection/${series.collection?.slug}`} style={{ textDecoration: 'none' }}>
+                    <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 12 }}>{series.collection?.name}</p>
+                </Link>
+
+                <div className="flex items-center gap-8">
+                    <span className="badge" style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontWeight: 600 }}>
+                        SUPPLY {series.totalSupply}
+                    </span>
+                    <span className={`badge badge-${series.rarity}`}>{series.rarity}</span>
+                </div>
             </div>
 
-            <div style={{ padding: 16 }}>
-                {/* Breadcrumb */}
-                <div className="flex items-center gap-4" style={{ marginBottom: 4 }}>
-                    <Link to={`/collection/${series.collection?.slug}`} className="caption" style={{ textDecoration: 'none' }}>{series.collection?.name}</Link>
-                    <span className="caption">/</span>
-                    <Link to={`/series/${series.slug}`} className="caption" style={{ textDecoration: 'none' }}>{series.name}</Link>
-                </div>
+            {/* Hero Viewport */}
+            <div style={{ margin: '0 16px', borderRadius: 24, background: 'var(--bg-card)', aspectRatio: '4/3', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {series.imageUrl ? <img src={series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <div className="skeleton" style={{ width: '100%', height: '100%' }} />}
+            </div>
 
-                <h1 className="h1" style={{ marginBottom: 8 }}>{series.name} #{nft.mintNumber}</h1>
-
-                <div className="flex items-center gap-8" style={{ marginBottom: 16 }}>
-                    <span className={`badge badge-${series.rarity}`}>{series.rarity}</span>
-                    <span className="tag" style={{ background: 'var(--bg-elevated)' }}>{t('nft.mint_number')}: {nft.mintNumber}</span>
-                </div>
-
-                {/* Price & Owner */}
+            {/* Details & Metadata */}
+            <div style={{ padding: '24px 16px' }}>
+                {/* Price & Owner Card */}
                 <div className="card" style={{ marginBottom: 24, padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <p className="caption" style={{ fontSize: 12, marginBottom: 2 }}>{nft.isListed ? t('nft.price') : t('nft.not_listed')}</p>
-                        <p style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.5px' }}>{nft.isListed ? `${(nft.listPrice / 1e9).toFixed(4)} TON` : `${(series.price / 1e9).toFixed(4)} TON`}</p>
+                        <p className="caption" style={{ fontSize: 13, marginBottom: 2 }}>{nft.isListed ? t('nft.price') : t('nft.not_listed')}</p>
+                        <p style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', color: nft.isListed ? 'var(--accent)' : 'inherit' }}>
+                            {nft.isListed ? `${(nft.listPrice / 1e9).toFixed(2)} TON` : t('nft.not_listed')}
+                        </p>
                     </div>
                     {nft.owner && (
                         <div style={{ textAlign: 'right' }}>
-                            <p className="caption" style={{ fontSize: 12, marginBottom: 2 }}>{t('nft.owner')}</p>
-                            <p style={{ fontWeight: 600, fontSize: 15, color: 'var(--accent)' }}>@{nft.owner.username || nft.owner.firstName || 'user'}</p>
+                            <p className="caption" style={{ fontSize: 13, marginBottom: 2 }}>{t('nft.owner')}</p>
+                            <p style={{ fontWeight: 600, fontSize: 16 }}>@{nft.owner.username || nft.owner.firstName || 'user'}</p>
                         </div>
-                    )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex-col gap-12" style={{ marginBottom: 32 }}>
-                    {!isOwner && nft.isListed && (
-                        <button className="btn btn-primary btn-block" style={{ height: 48 }} onClick={handleBuy} disabled={action}>{action === 'buy' ? '...' : t('nft.buy_now')}</button>
-                    )}
-                    {!isOwner && nft.owner && (
-                        <button className="btn btn-secondary btn-block" style={{ height: 48 }} onClick={() => setShowBidModal(true)}>{t('nft.make_offer')}</button>
-                    )}
-                    {isOwner && !nft.isListed && (
-                        <>
-                            <button className="btn btn-primary btn-block" style={{ height: 48 }} onClick={() => setShowListModal(true)}>{t('nft.list_for_sale')}</button>
-                            <Link to={`/transfer?nft=${id}`} className="btn btn-secondary btn-block" style={{ textDecoration: 'none', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{t('nft.transfer')}</Link>
-                        </>
-                    )}
-                    {isOwner && nft.isListed && (
-                        <button className="btn btn-secondary btn-block" style={{ height: 48 }} onClick={handleDelist} disabled={action}>{action === 'delist' ? '...' : t('nft.delist')}</button>
                     )}
                 </div>
 
@@ -155,6 +140,35 @@ export default function NFTDetail() {
                             ))}
                         </div>
                     </section>
+                )}
+            </div>
+
+            {/* Fixed Bottom Action Panel */}
+            <div style={{ position: 'fixed', bottom: 85, left: 16, right: 16, zIndex: 50, display: 'flex', gap: 12 }}>
+                {!isOwner && nft.isListed && (
+                    <button className="btn btn-primary" style={{ flex: 1, height: 50, fontSize: 17, borderRadius: 16, background: '#4DB8FF', color: '#FFFFFF', border: 'none' }} onClick={handleBuy} disabled={action || !user}>
+                        {action === 'buy' ? '...' : `Buy ${(nft.listPrice / 1e9).toFixed(2)} TON`}
+                    </button>
+                )}
+                {!isOwner && !nft.isListed && (
+                    <button className="btn btn-secondary" style={{ flex: 1, height: 50, fontSize: 16, borderRadius: 16 }} onClick={() => setShowBidModal(true)} disabled={!user}>
+                        {t('nft.make_offer')}
+                    </button>
+                )}
+                {!isOwner && nft.isListed && (
+                    <button className="btn btn-secondary" style={{ flex: 0.5, height: 50, fontSize: 15, borderRadius: 16 }} onClick={() => setShowBidModal(true)} disabled={!user}>
+                        {t('nft.make_offer')}
+                    </button>
+                )}
+
+                {isOwner && !nft.isListed && (
+                    <>
+                        <button className="btn btn-primary" style={{ flex: 1, height: 50, fontSize: 16, borderRadius: 16 }} onClick={() => setShowListModal(true)}>{t('nft.list_for_sale')}</button>
+                        <Link to={`/transfer?nft=${id}`} className="btn btn-secondary" style={{ flex: 0.8, height: 50, fontSize: 16, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>{t('nft.transfer')}</Link>
+                    </>
+                )}
+                {isOwner && nft.isListed && (
+                    <button className="btn btn-secondary btn-block" style={{ height: 50, fontSize: 16, borderRadius: 16 }} onClick={handleDelist} disabled={action}>{action === 'delist' ? '...' : t('nft.delist')}</button>
                 )}
             </div>
 
