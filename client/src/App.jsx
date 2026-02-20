@@ -65,8 +65,6 @@ function AppContent() {
                     <Route path="/presale" element={<PreSale />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/collection/:slug" element={<CollectionDetail />} />
-                    <Route path="/series/:slug" element={<SeriesDetail />} />
-                    <Route path="/nft/:id" element={<NFTDetail />} />
                     <Route path="/wallet" element={<Wallet />} />
                     <Route path="/transactions" element={<Transactions />} />
                     <Route path="/favorites" element={<Favorites />} />
@@ -74,6 +72,8 @@ function AppContent() {
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/admin" element={<AdminGuard><Dashboard /></AdminGuard>} />
                 </Route>
+                <Route path="/series/:slug" element={<SeriesDetail />} />
+                <Route path="/nft/:id" element={<NFTDetail />} />
             </Routes>
         </>
     );

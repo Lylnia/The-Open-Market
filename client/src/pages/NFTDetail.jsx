@@ -1,13 +1,15 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { useState } from 'react';
+import { useTelegram } from '../hooks/useTelegram';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
 
 export default function NFTDetail() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const { t } = useTranslation();
     const { user } = useAuth();
     const { data: nft, loading, refetch } = useApi(`/nfts/${id}`);
@@ -17,6 +19,18 @@ export default function NFTDetail() {
     const [showBidModal, setShowBidModal] = useState(false);
     const [showListModal, setShowListModal] = useState(false);
     const { showToast } = useToast();
+    const { tg, showBackButton } = useTelegram();
+
+    useEffect(() => {
+        showBackButton(true);
+        const handleBack = () => { navigate(-1); };
+        tg?.BackButton?.onClick(handleBack);
+
+        return () => {
+            showBackButton(false);
+            tg?.BackButton?.offClick(handleBack);
+        };
+    }, []);
 
     if (loading) return <div className="page"><div className="loading-center"><div className="spinner" /></div></div>;
     if (!nft) return <div className="page"><p>{t('common.error')}</p></div>;
@@ -53,7 +67,7 @@ export default function NFTDetail() {
     };
 
     return (
-        <div className="page" style={{ paddingBottom: 120 }}>
+        <div className="page" style={{ paddingBottom: 100 }}>
             {/* Header Text */}
             <div style={{ padding: '8px 16px', marginBottom: 12 }}>
                 <h1 className="h1" style={{ fontSize: 26, letterSpacing: '-0.5px', marginBottom: 2 }}>{series.name} #{nft.mintNumber}</h1>
@@ -144,7 +158,7 @@ export default function NFTDetail() {
             </div>
 
             {/* Fixed Bottom Action Panel */}
-            <div style={{ position: 'fixed', bottom: 85, left: 16, right: 16, zIndex: 50, display: 'flex', gap: 12 }}>
+            <div style={{ position: 'fixed', bottom: 32, left: 16, right: 16, zIndex: 50, display: 'flex', gap: 12 }}>
                 {!isOwner && nft.isListed && (
                     <button className="btn btn-primary" style={{ flex: 1, height: 50, fontSize: 17, borderRadius: 16, background: '#4DB8FF', color: '#FFFFFF', border: 'none' }} onClick={handleBuy} disabled={action || !user}>
                         {action === 'buy' ? '...' : `Buy ${(nft.listPrice / 1e9).toFixed(2)} TON`}
