@@ -1,17 +1,58 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import api from '../services/api';
 import PullToRefresh from '../components/PullToRefresh';
+import { useSocket } from '../hooks/useSocket';
 
 export default function Home() {
     const { t } = useTranslation();
     const { data: collections, loading, refetch: refetchCollections } = useApi('/collections');
-    const { data: activity, loading: activityLoading, refetch: refetchActivity } = useApi('/activity');
+
+    // Activity pagination state
+    const [activities, setActivities] = useState([]);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [activityLoading, setActivityLoading] = useState(true);
+
+    const fetchActivity = async (pageNum) => {
+        setActivityLoading(true);
+        try {
+            const res = await api.get('/activity', { params: { limit: 10, page: pageNum } });
+            if (pageNum === 1) {
+                setActivities(res.data.data);
+            } else {
+                setActivities(prev => [...prev, ...res.data.data]);
+            }
+            setHasMore(pageNum < res.data.pagination.pages);
+        } catch (error) {
+            console.error('Failed to fetch activity:', error);
+        } finally {
+            setActivityLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchActivity(1);
+    }, []);
+
+    // Listen to real-time socket events for new activities
+    useSocket({
+        'activity:new': (newActivity) => {
+            // Unshift the new activity to the start of the list
+            setActivities(prev => {
+                // Prevent duplicates if already in list
+                if (prev.some(act => act._id === newActivity._id)) return prev;
+                return [newActivity, ...prev];
+            });
+        }
+    });
 
     const handleRefresh = useCallback(async () => {
-        await Promise.all([refetchCollections(), refetchActivity()]);
-    }, [refetchCollections, refetchActivity]);
+        setPage(1);
+        await Promise.all([refetchCollections(), fetchActivity(1)]);
+    }, [refetchCollections]);
 
     return (
         <PullToRefresh onRefresh={handleRefresh}>
@@ -105,31 +146,47 @@ export default function Home() {
                     <div className="section-header" style={{ marginBottom: 16 }}>
                         <h2 className="h2" style={{ fontSize: 20 }}>Recent Activity</h2>
                     </div>
-                    {activityLoading ? (
+                    {activityLoading && page === 1 ? (
                         <div className="flex-col gap-8">
                             {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 12 }} />)}
                         </div>
-                    ) : activity?.length > 0 ? (
-                        <div className="card" style={{ padding: 0 }}>
-                            {activity.slice(0, 5).map((tx, i) => (
-                                <div key={i} className="flex items-center justify-between" style={{ padding: '12px 16px', borderBottom: i !== Math.min(activity.length - 1, 4) ? '1px solid var(--border)' : 'none' }}>
-                                    <div className="flex items-center gap-12">
-                                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg-elevated)', overflow: 'hidden', flexShrink: 0 }}>
-                                            {tx.nft?.series?.imageUrl && <img src={tx.nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    ) : activities.length > 0 ? (
+                        <>
+                            <div className="card" style={{ padding: 0 }}>
+                                {activities.map((tx, i) => (
+                                    <div key={i} className="flex items-center justify-between" style={{ padding: '12px 16px', borderBottom: i !== activities.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                                        <div className="flex items-center gap-12">
+                                            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg-elevated)', overflow: 'hidden', flexShrink: 0 }}>
+                                                {tx.nft?.series?.imageUrl && <img src={tx.nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                            </div>
+                                            <div>
+                                                <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)' }}>
+                                                    {tx.nft?.series?.name} #{tx.nft?.mintNumber}
+                                                </p>
+                                                <p className="caption" style={{ fontSize: 13, marginTop: 2 }}>
+                                                    @{tx.user?.username || 'user'} {tx.type === 'buy' ? 'bought' : tx.type}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)' }}>
-                                                {tx.nft?.series?.name} #{tx.nft?.mintNumber}
-                                            </p>
-                                            <p className="caption" style={{ fontSize: 13, marginTop: 2 }}>
-                                                @{tx.user?.username || 'user'} {tx.type === 'buy' ? 'bought' : tx.type}
-                                            </p>
-                                        </div>
+                                        {tx.amount > 0 && <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{(tx.amount / 1e9).toFixed(2)} TON</span>}
                                     </div>
-                                    {tx.amount > 0 && <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{(tx.amount / 1e9).toFixed(2)}</span>}
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                            {hasMore && (
+                                <button
+                                    className="btn-pill"
+                                    style={{ width: '100%', marginTop: 16, justifyContent: 'center' }}
+                                    onClick={() => {
+                                        const nextPage = page + 1;
+                                        setPage(nextPage);
+                                        fetchActivity(nextPage);
+                                    }}
+                                    disabled={activityLoading}
+                                >
+                                    {activityLoading ? 'LOADING...' : 'LOAD MORE ACTIVITIES'}
+                                </button>
+                            )}
+                        </>
                     ) : (
                         <p className="caption">No activity yet</p>
                     )}
