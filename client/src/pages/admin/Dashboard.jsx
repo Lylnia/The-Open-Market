@@ -80,7 +80,7 @@ function CollectionForm({ onSuccess, editData, onCancel }) {
 // ========== SERIES FORM ==========
 function SeriesForm({ collections, onSuccess, editData, onCancel }) {
     const [form, setForm] = useState(editData || {
-        name: '', slug: '', collection: '', imageUrl: '', price: '',
+        name: '', slug: '', collection: '', imageUrl: '',
         totalSupply: '', royaltyPercent: 5, isActive: true,
         description: { tr: '', en: '', ru: '' },
     });
@@ -90,7 +90,7 @@ function SeriesForm({ collections, onSuccess, editData, onCancel }) {
     const handleSubmit = async () => {
         try {
             setLoading(true);
-            const payload = { ...form, price: form.price ? Math.round(parseFloat(form.price) * 1e9) : 0, totalSupply: parseInt(form.totalSupply) };
+            const payload = { ...form, totalSupply: parseInt(form.totalSupply) };
             if (editData?._id) {
                 await api.put(`/admin/series/${editData._id}`, payload);
             } else {
@@ -121,9 +121,6 @@ function SeriesForm({ collections, onSuccess, editData, onCancel }) {
             </Field>
             <Field label="Görsel URL">
                 <input className="input" value={form.imageUrl} onChange={e => set('imageUrl', e.target.value)} placeholder="https://..." />
-            </Field>
-            <Field label="Fiyat (TON)">
-                <input className="input" type="number" step="0.01" value={form.price} onChange={e => set('price', e.target.value)} placeholder="Opsiyonel (Örn: 2.5)" />
             </Field>
             <Field label="Toplam Arz *">
                 <input className="input" type="number" value={form.totalSupply} onChange={e => set('totalSupply', e.target.value)} placeholder="Örn: 100" />
@@ -391,7 +388,7 @@ export default function Dashboard() {
                                             <div className="flex items-center gap-8">
                                                 <p style={{ fontWeight: 600 }}>{s.name}</p>
                                             </div>
-                                            <p className="caption">{s.collection?.name} — {s.mintedCount}/{s.totalSupply} — {(s.price / 1e9).toFixed(2)} TON — Royalty: {s.royaltyPercent}%</p>
+                                            <p className="caption">{s.collection?.name} — {s.mintedCount}/{s.totalSupply} — Royalty: {s.royaltyPercent}%</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-4">

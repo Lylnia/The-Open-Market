@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useTelegram } from '../hooks/useTelegram';
 import { useEffect } from 'react';
