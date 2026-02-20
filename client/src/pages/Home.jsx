@@ -8,7 +8,8 @@ import { useSocket } from '../hooks/useSocket';
 
 export default function Home() {
     const { t } = useTranslation();
-    const { data: collections, loading, refetch: refetchCollections } = useApi('/collections');
+    const { data: collectionsData, loading, refetch: refetchCollections } = useApi('/collections');
+    const collections = collectionsData?.data || collectionsData || [];
 
     // Activity pagination state
     const [activities, setActivities] = useState([]);
