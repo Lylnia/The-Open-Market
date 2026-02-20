@@ -12,6 +12,11 @@ export function useTelegram() {
     const haptic = (type = 'light') => tg?.HapticFeedback?.impactOccurred(type);
     const showConfirm = (msg) => new Promise(resolve => tg?.showConfirm(msg, resolve));
     const showAlert = (msg) => new Promise(resolve => tg?.showAlert(msg, resolve));
+    const disableVerticalSwipes = () => {
+        if (tg?.isVersionAtLeast?.('7.7')) {
+            tg.disableVerticalSwipes();
+        }
+    };
 
     return {
         tg,
@@ -26,5 +31,6 @@ export function useTelegram() {
         haptic,
         showConfirm,
         showAlert,
+        disableVerticalSwipes,
     };
 }

@@ -26,7 +26,7 @@ import { useEffect, useState } from 'react';
 import api from './services/api';
 
 function AppContent() {
-    const { ready, expand } = useTelegram();
+    const { ready, expand, disableVerticalSwipes } = useTelegram();
     const { loading } = useAuth();
     const [maintenance, setMaintenance] = useState(false);
     const [healthChecked, setHealthChecked] = useState(false);
@@ -34,6 +34,7 @@ function AppContent() {
     useEffect(() => {
         ready();
         expand();
+        disableVerticalSwipes();
     }, []);
 
     // Check maintenance mode

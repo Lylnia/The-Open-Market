@@ -53,7 +53,7 @@ export default function NFTDetail() {
     };
 
     return (
-        <div className="page" style={{ padding: 0 }}>
+        <div className="page-flush">
             {/* Image */}
             <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-card)', overflow: 'hidden' }}>
                 {series.imageUrl && <img src={series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}

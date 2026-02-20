@@ -12,7 +12,7 @@ export default function CollectionDetail() {
     if (!data) return <div className="page"><p>{t('common.error')}</p></div>;
 
     return (
-        <div className="page" style={{ padding: 0 }}>
+        <div className="page-flush">
             {/* Banner */}
             <div style={{ height: 180, position: 'relative', background: 'var(--bg-card)' }}>
                 {data.bannerUrl ? <img src={data.bannerUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> :

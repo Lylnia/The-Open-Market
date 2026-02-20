@@ -15,7 +15,7 @@ export default function Home() {
 
     return (
         <PullToRefresh onRefresh={handleRefresh}>
-            <div className="page" style={{ paddingTop: 12 }}>
+            <div className="page">
                 {/* Main banner (Featured) */}
                 <div className="section-header" style={{ marginBottom: 16 }}>
                     <h2 className="h2" style={{ fontSize: 22 }}>Collections</h2>

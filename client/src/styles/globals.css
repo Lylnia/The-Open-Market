@@ -169,6 +169,20 @@ select {
 /* ── Utility ── */
 .page {
   padding: 16px;
+  /* Support for Telegram WebApp safe area */
+  padding-top: calc(var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 24px)) + 16px);
+  padding-bottom: 110px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 600px;
+  margin: 0 auto;
+  animation: pageIn 0.35s ease-out;
+}
+
+.page-flush {
+  padding: 0;
+  /* Support for Telegram WebApp safe area */
+  padding-top: var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 24px));
   padding-bottom: 110px;
   min-height: 100vh;
   min-height: 100dvh;
@@ -251,12 +265,16 @@ select {
   background: var(--bg-card);
   border-radius: 16px;
   padding: 16px;
-  transition: transform 0.2s ease, background 0.2s ease;
   overflow: hidden;
 }
 
-.card:active {
-  transform: scale(0.98);
+/* ── List Item (For Grouped Cards) ── */
+.list-item {
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.list-item:active {
   background: var(--bg-elevated);
 }
 

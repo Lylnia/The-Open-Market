@@ -15,7 +15,9 @@ export default function Profile() {
     const { i18n } = useTranslation();
 
     const toggleLanguage = () => {
-        i18n.changeLanguage(i18n.language === 'en' ? 'ru' : 'en');
+        const langs = ['en', 'ru', 'tr'];
+        const currentIdx = langs.indexOf(i18n.language) !== -1 ? langs.indexOf(i18n.language) : 0;
+        i18n.changeLanguage(langs[(currentIdx + 1) % langs.length]);
     };
 
     const copyReferral = () => {
@@ -32,7 +34,7 @@ export default function Profile() {
     ];
 
     return (
-        <div className="page" style={{ paddingTop: 20 }}>
+        <div className="page">
             {/* Header / User info */}
             <div className="flex items-center gap-16" style={{ marginBottom: 32 }}>
                 <div style={{
@@ -55,7 +57,7 @@ export default function Profile() {
             <div className="card" style={{ padding: 0, marginBottom: 24, borderRadius: 16 }}>
                 {/* Referral Code */}
                 {user?.referralCode && (
-                    <div className="flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+                    <div className="list-item flex items-center justify-between" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }} onClick={copyReferral}>
                         <div className="flex items-center gap-12">
                             <IconLink size={20} style={{ color: 'var(--text-secondary)' }} />
                             <div>
@@ -63,17 +65,17 @@ export default function Profile() {
                                 <p style={{ fontSize: 15, fontWeight: 600, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{user.referralCode}</p>
                             </div>
                         </div>
-                        <button className="btn-pill" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={copyReferral}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>
                             <IconCopy size={14} />
                             {copied ? 'COPIED' : 'COPY'}
-                        </button>
+                        </div>
                     </div>
                 )}
 
                 {/* Profile Links */}
                 {menuItems.map(({ to, icon: Icon, label, value }, index) => (
                     <Link key={to} to={to} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <div className="flex items-center gap-12" style={{
+                        <div className="list-item flex items-center gap-12" style={{
                             padding: '14px 16px',
                             borderBottom: index !== menuItems.length - 1 ? '1px solid var(--border)' : 'none'
                         }}>
@@ -90,7 +92,7 @@ export default function Profile() {
             <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, paddingLeft: 16, textTransform: 'uppercase' }}>{t('nav.settings', 'App Settings')}</h3>
             <div className="card" style={{ padding: 0, marginBottom: 24, borderRadius: 16 }}>
                 {/* Theme Toggle */}
-                <div className="flex items-center gap-12" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', cursor: 'pointer' }} onClick={toggleTheme}>
+                <div className="list-item flex items-center gap-12" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }} onClick={toggleTheme}>
                     {theme === 'dark' ? <IconMoon size={22} style={{ color: 'var(--text-secondary)' }} /> : <IconSun size={22} style={{ color: 'var(--text-secondary)' }} />}
                     <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>{t('profile.theme')}</span>
                     <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>
@@ -99,11 +101,11 @@ export default function Profile() {
                 </div>
 
                 {/* Language Toggle */}
-                <div className="flex items-center gap-12" style={{ padding: '14px 16px', cursor: 'pointer' }} onClick={toggleLanguage}>
+                <div className="list-item flex items-center gap-12" style={{ padding: '14px 16px' }} onClick={toggleLanguage}>
                     <IconLanguage size={22} style={{ color: 'var(--text-secondary)' }} />
                     <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>{t('profile.language')}</span>
                     <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                        {i18n.language === 'en' ? 'English' : 'Русский'}
+                        {i18n.language === 'en' ? 'English' : i18n.language === 'ru' ? 'Русский' : 'Türkçe'}
                     </span>
                 </div>
             </div>
@@ -112,7 +114,7 @@ export default function Profile() {
             {user?.isAdmin && (
                 <div className="card" style={{ padding: 0, marginBottom: 24 }}>
                     <Link to="/admin" style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <div className="flex items-center gap-12" style={{ padding: '14px 16px' }}>
+                        <div className="list-item flex items-center gap-12" style={{ padding: '14px 16px' }}>
                             <IconShield size={22} style={{ color: 'var(--accent)' }} />
                             <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>Admin Panel</span>
                             <IconChevronRight size={16} style={{ color: 'var(--text-muted)' }} />
