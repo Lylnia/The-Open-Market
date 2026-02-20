@@ -10,7 +10,7 @@
     display: flex;
     align-items: center;
     justify-content: space-around;
-    background: var(--bg-card);
+    background: var(--bg-nav);
     border-top: 1px solid var(--border);
     padding: 10px 4px 24px;
     /* Extra bottom padding for iOS home indicator area if needed, otherwise just 10px */

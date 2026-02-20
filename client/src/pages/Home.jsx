@@ -9,7 +9,11 @@ import { useSocket } from '../hooks/useSocket';
 export default function Home() {
     const { t } = useTranslation();
     const { data: collectionsData, loading, refetch: refetchCollections } = useApi('/collections');
+    const { data: presaleRes, loading: presaleLoading, refetch: refetchPresale } = useApi('/presale');
     const collections = collectionsData?.data || collectionsData || [];
+
+    const presales = presaleRes?.active || presaleRes?.upcoming || [];
+    const latestPresale = presales[0];
 
     // Activity pagination state
     const [activities, setActivities] = useState([]);
@@ -52,8 +56,8 @@ export default function Home() {
 
     const handleRefresh = useCallback(async () => {
         setPage(1);
-        await Promise.all([refetchCollections(), fetchActivity(1)]);
-    }, [refetchCollections]);
+        await Promise.all([refetchCollections(), refetchPresale(), fetchActivity(1)]);
+    }, [refetchCollections, refetchPresale]);
 
     return (
         <PullToRefresh onRefresh={handleRefresh}>
@@ -86,58 +90,64 @@ export default function Home() {
                     </div>
                 )}
 
-                {/* Latest Series Section */}
+                {/* Presale Section */}
                 <section className="section" style={{ marginBottom: 24 }}>
                     <div className="section-header" style={{ marginBottom: 16 }}>
-                        <h2 className="h2" style={{ fontSize: 22 }}>Latest Series</h2>
+                        <h2 className="h2" style={{ fontSize: 22 }}>Presale</h2>
+                        <Link to="/presale" style={{ fontSize: 15, fontWeight: 500, color: 'var(--accent)' }}>More</Link>
                     </div>
 
-                    {loading ? (
+                    {presaleLoading ? (
                         <div className="flex-col gap-12">
                             {[1].map(i => <div key={i} className="skeleton" style={{ height: 160, borderRadius: 20 }} />)}
                         </div>
-                    ) : (
+                    ) : latestPresale ? (
                         <div className="flex-col gap-16">
-                            {(collections || []).slice(0, 1).map(col => (
-                                <div key={col._id} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-8">
-                                            <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-elevated)', overflow: 'hidden' }}>
-                                                {col.logoUrl && <img src={col.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                                            </div>
-                                            <h3 style={{ fontSize: 17, fontWeight: 600 }}>{col.name}</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-8">
+                                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-elevated)', overflow: 'hidden' }}>
+                                            {latestPresale.series?.imageUrl && <img src={latestPresale.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                                         </div>
-                                        <Link to={`/collection/${col.slug}`} className="btn-pill">
+                                        <h3 style={{ fontSize: 17, fontWeight: 600 }}>{latestPresale.name}</h3>
+                                    </div>
+                                    {latestPresale.soldCount >= latestPresale.totalSupply ? (
+                                        <Link to={`/collection/${latestPresale.series?.collection?.slug}`} className="btn-pill">
                                             GET ON MARKET
                                         </Link>
-                                    </div>
-
-                                    <div className="scroll-h" style={{ gap: 8, paddingBottom: 8 }}>
-                                        {/* Mocking collection items for the UI look */}
-                                        {[1, 2, 3].map(item => (
-                                            <div key={item} style={{
-                                                width: 140, height: 140, borderRadius: 16, flexShrink: 0,
-                                                background: 'var(--bg-card)', border: '1px solid var(--border-light)', overflow: 'hidden'
-                                            }}>
-                                                {col.bannerUrl ?
-                                                    <img src={col.bannerUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> :
-                                                    <div style={{ width: '100%', height: '100%', background: 'var(--bg-elevated)' }} />
-                                                }
-                                            </div>
-                                        ))}
-                                        <Link to={`/collection/${col.slug}`} style={{ textDecoration: 'none' }}>
-                                            <div style={{
-                                                width: 140, height: 140, borderRadius: 16, flexShrink: 0,
-                                                background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                border: '1px solid var(--border-light)'
-                                            }}>
-                                                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>VIEW MORE</span>
-                                            </div>
+                                    ) : (
+                                        <Link to="/presale" className="btn-pill" style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: 'none' }}>
+                                            {(latestPresale.price / 1e9).toFixed(2)} TON
                                         </Link>
-                                    </div>
+                                    )}
                                 </div>
-                            ))}
+
+                                <div className="scroll-h" style={{ gap: 8, paddingBottom: 8 }}>
+                                    {[1, 2, 3].map(item => (
+                                        <div key={item} style={{
+                                            width: 140, height: 140, borderRadius: 16, flexShrink: 0,
+                                            background: 'var(--bg-card)', border: '1px solid var(--border-light)', overflow: 'hidden'
+                                        }}>
+                                            {latestPresale.series?.imageUrl ?
+                                                <img src={latestPresale.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> :
+                                                <div style={{ width: '100%', height: '100%', background: 'var(--bg-elevated)' }} />
+                                            }
+                                        </div>
+                                    ))}
+                                    <Link to={`/presale`} style={{ textDecoration: 'none' }}>
+                                        <div style={{
+                                            width: 140, height: 140, borderRadius: 16, flexShrink: 0,
+                                            background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            border: '1px solid var(--border-light)'
+                                        }}>
+                                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>VIEW MORE</span>
+                                        </div>
+                                    </Link>
+                                </div>
+                            </div>
                         </div>
+                    ) : (
+                        <p className="caption">No active presales</p>
                     )}
                 </section>
 

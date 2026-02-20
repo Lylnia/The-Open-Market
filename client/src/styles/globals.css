@@ -8,7 +8,7 @@
   --bg-secondary: #0F0F0F;
   --bg-card: #1C1C1E;
   --bg-elevated: #2C2C2E;
-  --bg-nav: rgba(0, 0, 0, 0.85);
+  --bg-nav: #1C1C1E;
   --bg-input: #2C2C2E;
   --bg-glass: rgba(255, 255, 255, 0.04);
   --text-primary: #FFFFFF;
@@ -39,9 +39,9 @@
 :root[data-theme="light"] {
   --bg-primary: #F2F2F7;
   --bg-secondary: #FFFFFF;
-  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-card: #FFFFFF;
   --bg-elevated: #E5E5EA;
-  --bg-nav: rgba(249, 249, 249, 0.72);
+  --bg-nav: #FFFFFF;
   --bg-input: rgba(118, 118, 128, 0.12);
   --bg-glass: rgba(255, 255, 255, 0.7);
   --text-primary: #000000;
