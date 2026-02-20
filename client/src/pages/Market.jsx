@@ -10,8 +10,8 @@ export default function Market() {
     const { t } = useTranslation();
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
-    const [collection, setCollection] = useState('');
-    const [sort, setSort] = useState('ascending');
+    const [seriesId, setSeriesId] = useState('');
+    const [sort, setSort] = useState('price_asc');
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -25,16 +25,16 @@ export default function Market() {
     const [hasMore, setHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Fetch collections for dropdown
-    const { data: collectionsData } = useApi('/collections', { limit: 100 });
-    const collections = collectionsData?.data || [];
+    // Fetch series for dropdown
+    const { data: seriesData } = useApi('/series', { limit: 100 });
+    const seriesList = Array.isArray(seriesData) ? seriesData : seriesData?.data || [];
 
     const fetchNfts = async (pageNum, reset = false) => {
         setIsLoading(true);
         try {
             const params = { listed: 'true', limit: 20, page: pageNum, sort };
             if (debouncedSearch) params.search = debouncedSearch;
-            if (collection) params.collection = collection;
+            if (seriesId) params.series = seriesId;
 
             const res = await api.get('/nfts', { params });
             if (reset || pageNum === 1) {
@@ -57,7 +57,7 @@ export default function Market() {
     useEffect(() => {
         setPage(1);
         fetchNfts(1, true);
-    }, [debouncedSearch, collection, sort]);
+    }, [debouncedSearch, seriesId, sort]);
 
     // Fetch more pages
     useEffect(() => {
@@ -103,15 +103,15 @@ export default function Market() {
 
                 <div className="grid-2" style={{ gap: 12 }}>
                     <div style={{ position: 'relative' }}>
-                        <span style={{ position: 'absolute', top: 8, left: 12, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>Collections</span>
+                        <span style={{ position: 'absolute', top: 8, left: 12, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>Series</span>
                         <select
                             className="input"
                             style={{ paddingTop: 24, paddingBottom: 8, paddingLeft: 12, height: 56, borderRadius: 16, background: 'var(--bg-elevated)', border: 'none', appearance: 'none', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}
-                            value={collection}
-                            onChange={e => setCollection(e.target.value)}
+                            value={seriesId}
+                            onChange={e => setSeriesId(e.target.value)}
                         >
-                            <option value="">All Collections</option>
-                            {collections.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                            <option value="">All Series</option>
+                            {seriesList.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
                         </select>
                     </div>
 
@@ -123,8 +123,10 @@ export default function Market() {
                             value={sort}
                             onChange={e => setSort(e.target.value)}
                         >
-                            <option value="ascending">Ascending</option>
-                            <option value="descending">Descending</option>
+                            <option value="price_asc">Price: Ascending</option>
+                            <option value="price_desc">Price: Descending</option>
+                            <option value="number_asc">Number: Ascending</option>
+                            <option value="number_desc">Number: Descending</option>
                         </select>
                     </div>
                 </div>

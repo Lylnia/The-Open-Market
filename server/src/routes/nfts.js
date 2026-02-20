@@ -47,7 +47,10 @@ router.get('/', asyncHandler(async (req, res) => {
         }
     }
 
-    const sortConfig = sort === 'ascending' ? { listPrice: 1, createdAt: 1 } : { listPrice: -1, createdAt: -1 };
+    let sortConfig = { listPrice: 1, createdAt: 1 };
+    if (sort === 'price_desc') sortConfig = { listPrice: -1, createdAt: -1 };
+    if (sort === 'number_asc') sortConfig = { mintNumber: 1, createdAt: 1 };
+    if (sort === 'number_desc') sortConfig = { mintNumber: -1, createdAt: -1 };
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const nfts = await NFT.find(filter)

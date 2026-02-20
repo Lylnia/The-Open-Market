@@ -13,6 +13,7 @@ export default function SeriesDetail() {
     const { t } = useTranslation();
     const { user } = useAuth();
     const { data, loading, refetch } = useApi(`/series/${slug}`);
+    const { data: presaleData } = useApi('/presale');
     const [buyingMint, setBuyingMint] = useState(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const { showToast } = useToast();
@@ -39,11 +40,10 @@ export default function SeriesDetail() {
 
     const available = data.totalSupply - data.mintedCount;
 
-    // Create available blanks
-    const availableItems = Array.from({ length: Math.min(100, available) }, (_, i) => data.mintedCount + i + 1);
+    // Create available blanks safely
+    const availableItems = available > 0 ? Array.from({ length: Math.min(100, available) }, (_, i) => data.mintedCount + i + 1) : [];
 
     // Check if there is an active presale
-    const { data: presaleData } = useApi('/presale');
     const isPresaleActive = presaleData?.active?.some(p => p.series?._id === data._id);
     const activePresale = presaleData?.active?.find(p => p.series?._id === data._id);
 
