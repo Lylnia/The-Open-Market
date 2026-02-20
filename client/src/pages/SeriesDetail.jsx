@@ -68,17 +68,16 @@ export default function SeriesDetail() {
     return (
         <div className="page" style={{ paddingBottom: 100 }}>
             {/* Header Text */}
-            <div style={{ padding: '8px 16px', marginBottom: 12 }}>
-                <h1 className="h1" style={{ fontSize: 26, letterSpacing: '-0.5px', marginBottom: 2 }}>{data.name}</h1>
+            <div style={{ padding: '8px 16px', marginBottom: 18 }}>
+                <h1 className="h1" style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.6px', marginBottom: 4 }}>{data.name}</h1>
                 <Link to={`/collection/${data.collection?.slug}`} style={{ textDecoration: 'none' }}>
-                    <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 12 }}>{data.collection?.name}</p>
+                    <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--accent)', marginBottom: 12 }}>{data.collection?.name}</p>
                 </Link>
-
-                <div className="flex items-center gap-8">
-                    <span className="badge" style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontWeight: 600 }}>
-                        SUPPLY {data.totalSupply}
-                    </span>
-                </div>
+                {(data.description && (data.description.en || data.description.tr || data.description.ru)) && (
+                    <p className="body" style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.4 }}>
+                        {data.description.en || data.description.tr || data.description.ru}
+                    </p>
+                )}
             </div>
 
             {/* Hero Viewport */}
@@ -86,22 +85,7 @@ export default function SeriesDetail() {
                 {data.imageUrl ? <img src={data.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <div className="skeleton" style={{ width: '100%', height: '100%' }} />}
             </div>
 
-            {/* Details */}
-            <div style={{ padding: '24px 16px' }}>
-                <div className="card" style={{ padding: 16 }}>
-                    <div className="flex justify-between items-center" style={{ marginBottom: 12 }}>
-                        <p style={{ fontSize: 18, fontWeight: 700 }}>{data.name}</p>
-                        {available > 0 ? (
-                            <span className="tag" style={{ background: 'var(--bg-elevated)' }}>Available to Mint</span>
-                        ) : (
-                            <span className="tag" style={{ background: 'var(--bg-elevated)' }}>Sold Out</span>
-                        )}
-                    </div>
 
-                    <p className="caption" style={{ marginBottom: 4 }}>Price</p>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>{(data.price / 1e9).toFixed(2)} TON</p>
-                </div>
-            </div>
 
             {/* Fixed Action Bottom Button */}
             <div style={{ position: 'fixed', bottom: 32, left: 16, right: 16, zIndex: 50 }}>
