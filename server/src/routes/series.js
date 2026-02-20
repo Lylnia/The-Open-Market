@@ -5,6 +5,18 @@ const { getSeriesStats } = require('../services/statsService');
 
 const router = express.Router();
 
+router.get('/', async (req, res) => {
+    try {
+        const series = await Series.find({ isActive: true })
+            .select('name _id')
+            .sort({ name: 1 })
+            .lean();
+        res.json(series);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch series' });
+    }
+});
+
 router.get('/:slug', async (req, res) => {
     try {
         const series = await Series.findOne({ slug: req.params.slug, isActive: true })

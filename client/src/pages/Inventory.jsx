@@ -2,13 +2,18 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useTelegram } from '../hooks/useTelegram';
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { IconSearch, IconPresale } from '../assets/icons';
 
 export default function Inventory() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { data: nfts, loading } = useApi('/user/nfts');
     const { tg, showBackButton } = useTelegram();
+
+    const [search, setSearch] = useState('');
+    const [seriesId, setSeriesId] = useState('');
+    const [sort, setSort] = useState('number_asc');
 
     useEffect(() => {
         showBackButton(true);
@@ -21,6 +26,34 @@ export default function Inventory() {
         };
     }, []);
 
+    const userSeriesList = useMemo(() => {
+        const list = [];
+        const set = new Set();
+        (nfts || []).forEach(n => {
+            if (n.series && !set.has(n.series._id)) {
+                set.add(n.series._id);
+                list.push(n.series);
+            }
+        });
+        return list;
+    }, [nfts]);
+
+    const filteredNfts = useMemo(() => {
+        let arr = nfts ? [...nfts] : [];
+        if (search.trim()) {
+            const s = search.toLowerCase();
+            arr = arr.filter(n => n.series?.name?.toLowerCase().includes(s) || n.mintNumber.toString().includes(s));
+        }
+        if (seriesId) {
+            arr = arr.filter(n => n.series?._id === seriesId);
+        }
+        if (sort === 'price_asc') arr.sort((a, b) => a.listPrice - b.listPrice);
+        if (sort === 'price_desc') arr.sort((a, b) => b.listPrice - a.listPrice);
+        if (sort === 'number_asc') arr.sort((a, b) => a.mintNumber - b.mintNumber);
+        if (sort === 'number_desc') arr.sort((a, b) => b.mintNumber - a.mintNumber);
+        return arr;
+    }, [nfts, search, seriesId, sort]);
+
     if (loading) return <div className="page"><div className="loading-center"><div className="spinner" /></div></div>;
 
     return (
@@ -32,9 +65,52 @@ export default function Inventory() {
                 <p style={{ fontSize: 32, fontWeight: 700 }}>{nfts?.length || 0}</p>
             </div>
 
-            {nfts?.length > 0 ? (
+            <div style={{ marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ position: 'relative' }}>
+                    <IconSearch size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input
+                        className="input"
+                        style={{ paddingLeft: 44, borderRadius: 16, height: 48, fontSize: 16, background: 'var(--bg-elevated)', border: 'none' }}
+                        placeholder="Name or ID"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
+                </div>
+
+                <div className="grid-2" style={{ gap: 12 }}>
+                    <div style={{ position: 'relative' }}>
+                        <span style={{ position: 'absolute', top: 8, left: 12, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>Series</span>
+                        <select
+                            className="input"
+                            style={{ paddingTop: 24, paddingBottom: 8, paddingLeft: 12, height: 56, borderRadius: 16, background: 'var(--bg-elevated)', border: 'none', appearance: 'none', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}
+                            value={seriesId}
+                            onChange={e => setSeriesId(e.target.value)}
+                        >
+                            <option value="">All Series</option>
+                            {userSeriesList.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                        </select>
+                    </div>
+
+                    <div style={{ position: 'relative' }}>
+                        <span style={{ position: 'absolute', top: 8, left: 12, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>Sort</span>
+                        <select
+                            className="input"
+                            style={{ paddingTop: 24, paddingBottom: 8, paddingLeft: 12, height: 56, borderRadius: 16, background: 'var(--bg-elevated)', border: 'none', appearance: 'none', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}
+                            value={sort}
+                            onChange={e => setSort(e.target.value)}
+                        >
+                            <option value="number_asc">Number: Ascending</option>
+                            <option value="number_desc">Number: Descending</option>
+                            <option value="price_asc">Price: Ascending</option>
+                            <option value="price_desc">Price: Descending</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {filteredNfts.length > 0 ? (
                 <div className="grid-2">
-                    {nfts.map((nft, idx) => (
+                    {filteredNfts.map((nft, idx) => (
                         <Link key={`${nft._id}-${idx}`} to={`/nft/${nft._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                             <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 16 }}>
                                 <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)' }}>
@@ -54,7 +130,8 @@ export default function Inventory() {
                 </div>
             ) : (
                 <div className="empty-state">
-                    <p>No NFTs yet.</p>
+                    <IconPresale size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
+                    <p>No NFTs match your filters.</p>
                 </div>
             )}
         </div>

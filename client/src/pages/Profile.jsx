@@ -136,29 +136,7 @@ export default function Profile() {
                 </div>
             </div>
 
-            {/* My NFTs Grid */}
-            {nfts?.length > 0 ? (
-                <>
-                    <div className="grid-2">
-                        {nfts.slice(0, 4).map(nft => (
-                            <Link key={nft._id} to={`/nft/${nft._id}`} style={{ textDecoration: 'none' }}>
-                                <div className="card" style={{ padding: 0, borderRadius: 16 }}>
-                                    <div style={{ width: '100%', aspectRatio: '1', background: 'var(--bg-elevated)' }}>
-                                        {nft.series?.imageUrl && <img src={nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                                    </div>
-                                    <div style={{ padding: '8px 12px' }}>
-                                        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nft.series?.name} #{nft.mintNumber}</p>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                </>
-            ) : (
-                <div style={{ textAlign: 'center', padding: '40px 0', opacity: 0.5 }}>
-                    <p style={{ fontSize: 15 }}>No NFTs yet.</p>
-                </div>
-            )}
+            {/* Removed My NFTs Grid as requested */}
         </div>
     );
 }

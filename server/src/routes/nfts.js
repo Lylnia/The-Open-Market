@@ -22,7 +22,10 @@ router.get('/', asyncHandler(async (req, res) => {
     const filter = {};
     if (series) filter.series = series;
     if (owner) filter.owner = owner;
-    if (listed === 'true') filter.isListed = true;
+    if (listed === 'true') {
+        filter.isListed = true;
+        filter.listPrice = { $gt: 0 };
+    }
 
     if (collection) {
         const seriesInCol = await Series.find({ collection }).select('_id').lean();
