@@ -20,6 +20,10 @@ connectDB();
 // Init Telegram Bot
 initBot();
 
+// Start TON Deposit Listener
+const { startDepositCron } = require('./tasks/checkDeposits');
+startDepositCron();
+
 // Middleware
 app.use(cors({
     origin: process.env.FRONTEND_URL,
