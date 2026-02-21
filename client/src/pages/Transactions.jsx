@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../hooks/useApi';
+import CustomSelect from './common/CustomSelect';
 import { IconArrowUpRight, IconArrowDownLeft, IconShoppingCart, IconTag, IconExchange, IconGift, IconUsers } from '../assets/icons';
 
 export default function Transactions() {
@@ -17,6 +18,8 @@ export default function Transactions() {
 
     const types = ['', 'deposit', 'withdrawal', 'buy', 'sell', 'transfer_in', 'transfer_out', 'airdrop', 'referral_earning'];
     const typeLabels = { '': 'Tümü', deposit: t('transactions.deposit'), withdrawal: t('transactions.withdrawal'), buy: t('transactions.buy'), sell: t('transactions.sell'), transfer_in: t('transactions.transfer_in'), transfer_out: t('transactions.transfer_out'), airdrop: t('transactions.airdrop'), referral_earning: t('transactions.referral') };
+    const typeOptions = types.map(t => ({ value: t, label: typeLabels[t] || t }));
+
     const dateFilters = [
         { value: '', label: 'Tüm Zamanlar' },
         { value: '1', label: 'Son 24 Saat' },
@@ -46,30 +49,20 @@ export default function Transactions() {
             <div className="flex gap-8" style={{ marginBottom: 20 }}>
                 {/* Type Filter */}
                 <div style={{ flex: 1 }}>
-                    <select
-                        className="input"
+                    <CustomSelect
                         value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--bg-elevated)', border: '1px solid var(--border)', width: '100%', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
-                    >
-                        {types.map(type => (
-                            <option key={type} value={type}>{typeLabels[type] || type}</option>
-                        ))}
-                    </select>
+                        onChange={(val) => setFilter(val)}
+                        options={typeOptions}
+                    />
                 </div>
 
                 {/* Date Filter */}
                 <div style={{ flex: 1 }}>
-                    <select
-                        className="input"
+                    <CustomSelect
                         value={daysFilter}
-                        onChange={(e) => setDaysFilter(e.target.value)}
-                        style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--bg-elevated)', border: '1px solid var(--border)', width: '100%', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
-                    >
-                        {dateFilters.map(df => (
-                            <option key={df.value} value={df.value}>{df.label}</option>
-                        ))}
-                    </select>
+                        onChange={(val) => setDaysFilter(val)}
+                        options={dateFilters}
+                    />
                 </div>
             </div>
 

@@ -321,7 +321,7 @@ export default function Dashboard() {
     const closeForm = () => { setShowForm(false); setEditItem(null); };
 
     return (
-        <div className="page" style={{ padding: 0, display: 'flex', minHeight: '100vh', background: 'var(--bg-base)' }}>
+        <div className="page" style={{ padding: 0, display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-base)' }}>
             {/* Sidebar Desktop / Topbar Mobile */}
             <div style={{
                 width: '100%', maxWidth: 240, background: 'var(--bg-elevated)', borderRight: '1px solid var(--border)',
