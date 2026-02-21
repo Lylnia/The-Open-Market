@@ -2,13 +2,13 @@
    The Open Market — Apple-Inspired Design System
    ═══════════════════════════════════════════════════ */
 
-/* ── Dark Theme (Telegram Native) ── */
+/* ── Dark Theme (Lighter Black) ── */
 :root[data-theme="dark"] {
-  --bg-primary: #000000;
-  --bg-secondary: #0F0F0F;
-  --bg-card: #1C1C1E;
+  --bg-primary: #121212;
+  --bg-secondary: #181818;
+  --bg-card: #202022;
   --bg-elevated: #2C2C2E;
-  --bg-nav: #1C1C1E;
+  --bg-nav: #202022;
   --bg-input: #2C2C2E;
   --bg-glass: rgba(255, 255, 255, 0.04);
   --text-primary: #FFFFFF;
