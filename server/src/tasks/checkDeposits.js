@@ -94,7 +94,7 @@ async function processDeposits() {
             }
         }
     } catch (error) {
-        console.error('[TON] Error listening to blockchain:', error.message);
+        console.error('[TON] Error listening to blockchain:', error);
     }
 }
 
