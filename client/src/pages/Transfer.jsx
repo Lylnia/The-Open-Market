@@ -13,12 +13,19 @@ export default function Transfer() {
     const [selectedNft, setSelectedNft] = useState(params.get('nft') || '');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [showConfirmTransferModal, setShowConfirmTransferModal] = useState(false);
     const { data: nfts } = useApi('/user/nfts');
+
+    const initiateTransfer = () => {
+        if (!username || !selectedNft) return;
+        setShowConfirmTransferModal(true);
+    };
 
     const handleTransfer = async () => {
         try {
             setLoading(true);
             await api.post('/transfer/send', { nftId: selectedNft, toUsername: username });
+            setShowConfirmTransferModal(false);
             setSuccess(true);
             showToast(t('transfer.success'), 'success');
         } catch (e) {
@@ -77,10 +84,44 @@ export default function Transfer() {
                     </div>
                 </div>
 
-                <button className="btn btn-primary btn-block" onClick={handleTransfer} disabled={loading || !username || !selectedNft}>
-                    {loading ? '...' : t('transfer.confirm')}
+                <button className="btn btn-primary btn-block" onClick={initiateTransfer} disabled={loading || !username || !selectedNft}>
+                    {t('transfer.confirm')}
                 </button>
             </div>
+
+            {/* Transfer Confirmation Modal */}
+            {showConfirmTransferModal && (
+                <div className="modal-overlay" onClick={() => setShowConfirmTransferModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-handle" />
+                        <h3 className="h2" style={{ marginBottom: 8, color: 'var(--text-primary)', textAlign: 'center' }}>Confirm Transfer</h3>
+
+                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, padding: 16, marginBottom: 24, textAlign: 'center' }}>
+                            <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 8 }}>You are about to transfer</p>
+
+                            {(() => {
+                                const nftData = nfts?.find(n => n._id === selectedNft);
+                                return (
+                                    <>
+                                        <p className="h3" style={{ color: 'var(--accent)', marginBottom: 16 }}>
+                                            {nftData?.series?.name} #{nftData?.mintNumber}
+                                        </p>
+                                        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>To User</p>
+                                        <p style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.5px' }}>@{username.replace('@', '')}</p>
+                                    </>
+                                );
+                            })()}
+                        </div>
+
+                        <div className="flex gap-12">
+                            <button className="btn btn-secondary" style={{ flex: 1, height: 50, borderRadius: 16 }} onClick={() => setShowConfirmTransferModal(false)}>Cancel</button>
+                            <button className="btn btn-primary" style={{ flex: 1, height: 50, borderRadius: 16, background: 'var(--success)', border: 'none', color: '#fff' }} onClick={handleTransfer} disabled={loading}>
+                                {loading ? '...' : 'Yes, Transfer'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

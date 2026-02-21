@@ -5,17 +5,11 @@ import { IconTrophy } from '../assets/icons';
 
 export default function Leaderboard() {
     const { t } = useTranslation();
-    const [tab, setTab] = useState('balance');
-    const { data, loading } = useApi('/leaderboard', { type: tab }, [tab]);
+    const { data, loading } = useApi('/leaderboard', { type: 'nft' });
 
     return (
-        <div className="page">
-            <h1 className="h2" style={{ marginBottom: 16 }}>{t('leaderboard.title')}</h1>
-
-            <div className="tabs" style={{ marginBottom: 20 }}>
-                <button className={`tab ${tab === 'balance' ? 'active' : ''}`} onClick={() => setTab('balance')}>{t('leaderboard.by_balance')}</button>
-                <button className={`tab ${tab === 'nft' ? 'active' : ''}`} onClick={() => setTab('nft')}>{t('leaderboard.by_nfts')}</button>
-            </div>
+        <div className="page" style={{ paddingBottom: 100 }}>
+            <h1 className="h2" style={{ marginBottom: 24 }}>{t('leaderboard.title')}</h1>
 
             {loading ? (
                 <div className="flex-col gap-8">{[1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton" style={{ height: 56, borderRadius: 12 }} />)}</div>
@@ -42,9 +36,8 @@ export default function Leaderboard() {
                                 <p className="caption">@{entry.username || 'user'}</p>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                <p style={{ fontWeight: 700, fontSize: 14 }}>
-                                    {tab === 'balance' ? `${(entry.balance / 1e9).toFixed(2)} TON` : entry.nftCount}
-                                </p>
+                                <p style={{ fontWeight: 700, fontSize: 16 }}>{entry.nftCount}</p>
+                                <p className="caption">NFTs</p>
                             </div>
                         </div>
                     ))}

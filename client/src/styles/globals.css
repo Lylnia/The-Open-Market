@@ -91,6 +91,10 @@ body {
   font-size: 15px;
   line-height: 1.47;
   letter-spacing: -0.01em;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 #root {

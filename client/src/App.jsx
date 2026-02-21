@@ -17,7 +17,6 @@ import SeriesDetail from './pages/SeriesDetail';
 import NFTDetail from './pages/NFTDetail';
 import Wallet from './pages/Wallet';
 import Transactions from './pages/Transactions';
-import Favorites from './pages/Favorites';
 import Transfer from './pages/Transfer';
 import Leaderboard from './pages/Leaderboard';
 import Dashboard from './pages/admin/Dashboard';
@@ -69,7 +68,6 @@ function AppContent() {
                     <Route path="/collection/:slug" element={<CollectionDetail />} />
                     <Route path="/wallet" element={<Wallet />} />
                     <Route path="/transactions" element={<Transactions />} />
-                    <Route path="/favorites" element={<Favorites />} />
                     <Route path="/transfer" element={<Transfer />} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/admin" element={<AdminGuard><Dashboard /></AdminGuard>} />

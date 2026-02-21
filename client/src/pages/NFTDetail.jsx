@@ -17,8 +17,8 @@ export default function NFTDetail() {
     const [action, setAction] = useState(null);
     const [bidAmount, setBidAmount] = useState('');
     const [listPrice, setListPrice] = useState('');
-    const [showBidModal, setShowBidModal] = useState(false);
     const [showListModal, setShowListModal] = useState(false);
+    const [showConfirmListModal, setShowConfirmListModal] = useState(false);
     const { showToast } = useToast();
     const { tg, showBackButton } = useTelegram();
 
@@ -51,15 +51,21 @@ export default function NFTDetail() {
         finally { setAction(null); }
     };
 
+    const initiateList = () => {
+        const priceVal = parseFloat(listPrice);
+        if (isNaN(priceVal) || priceVal <= 0) {
+            return showToast('Price must be greater than 0', 'error');
+        }
+        setShowListModal(false);
+        setShowConfirmListModal(true);
+    };
+
     const handleList = async () => {
         try {
             const priceVal = parseFloat(listPrice);
-            if (isNaN(priceVal) || priceVal <= 0) {
-                return showToast('Price must be greater than 0', 'error');
-            }
             setAction('list');
             await api.post(`/nfts/${id}/list`, { price: priceVal * 1e9 });
-            setShowListModal(false);
+            setShowConfirmListModal(false);
             setListPrice('');
             refetch();
         }
@@ -167,21 +173,6 @@ export default function NFTDetail() {
                     </section>
                 )}
 
-                {/* Price History */}
-                {nft.priceHistory?.length > 0 && (
-                    <section className="section" style={{ marginBottom: 24 }}>
-                        <h3 className="section-title" style={{ marginBottom: 12 }}>{t('series.price_history')}</h3>
-                        <div className="card" style={{ padding: 0 }}>
-                            {nft.priceHistory.map((ph, idx) => (
-                                <div key={idx} className="flex justify-between items-center" style={{ padding: '12px 16px', borderBottom: idx !== nft.priceHistory.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                                    <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{new Date(ph.createdAt).toLocaleDateString()}</span>
-                                    <span style={{ fontSize: 15, fontWeight: 600 }}>{(ph.price / 1e9).toFixed(4)} TON</span>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-
                 {/* Attributes */}
                 {series.attributes?.length > 0 && (
                     <section className="section">
@@ -266,7 +257,27 @@ export default function NFTDetail() {
                             </div>
                         )}
 
-                        <button className="btn btn-primary btn-block" onClick={handleList} disabled={!listPrice || listPrice <= 0 || !!action}>{action === 'list' ? '...' : t('common.confirm')}</button>
+                        <button className="btn btn-primary btn-block" onClick={initiateList} disabled={!listPrice || listPrice <= 0 || !!action}>{action === 'list' ? '...' : t('common.confirm')}</button>
+                    </div>
+                </div>
+            )}
+
+            {/* List Confirmation Modal */}
+            {showConfirmListModal && (
+                <div className="modal-overlay" onClick={() => setShowConfirmListModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-handle" />
+                        <h3 className="h2" style={{ marginBottom: 8, color: 'var(--text-primary)', textAlign: 'center' }}>Are you sure?</h3>
+                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, padding: 16, marginBottom: 24, textAlign: 'center' }}>
+                            <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 8 }}>You are listing:</p>
+                            <p className="h3" style={{ color: 'var(--accent)', marginBottom: 16 }}>{series.name} #{nft.mintNumber}</p>
+                            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>For the price of</p>
+                            <p style={{ fontSize: 28, fontWeight: 700 }}>{listPrice} TON</p>
+                        </div>
+                        <div className="flex gap-12">
+                            <button className="btn btn-secondary" style={{ flex: 1, height: 50, borderRadius: 16 }} onClick={() => setShowConfirmListModal(false)}>Cancel</button>
+                            <button className="btn btn-primary" style={{ flex: 1, height: 50, borderRadius: 16, background: 'var(--success)', border: 'none', color: '#fff' }} onClick={handleList} disabled={action === 'list'}>{action === 'list' ? '...' : 'Yes, List It'}</button>
+                        </div>
                     </div>
                 </div>
             )}
