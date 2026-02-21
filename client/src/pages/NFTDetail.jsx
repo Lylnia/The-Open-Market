@@ -6,6 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useTelegram } from '../hooks/useTelegram';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { IconShare } from '../assets/icons';
 
 export default function NFTDetail() {
     const { id } = useParams();
