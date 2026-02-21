@@ -17,6 +17,7 @@ export default function NFTDetail() {
     const [action, setAction] = useState(null);
     const [bidAmount, setBidAmount] = useState('');
     const [listPrice, setListPrice] = useState('');
+    const [showBidModal, setShowBidModal] = useState(false);
     const [showListModal, setShowListModal] = useState(false);
     const [showConfirmListModal, setShowConfirmListModal] = useState(false);
     const { showToast } = useToast();

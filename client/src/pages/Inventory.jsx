@@ -15,6 +15,10 @@ export default function Inventory() {
     const [seriesId, setSeriesId] = useState('');
     const [sort, setSort] = useState('number_asc');
 
+    // Custom Select state
+    const [showSeriesSelect, setShowSeriesSelect] = useState(false);
+    const [showSortSelect, setShowSortSelect] = useState(false);
+
     useEffect(() => {
         showBackButton(true);
         const handleBack = () => { navigate(-1); };
@@ -78,32 +82,84 @@ export default function Inventory() {
                 </div>
 
                 <div className="grid-2" style={{ gap: 12 }}>
-                    <div style={{ position: 'relative' }}>
-                        <span style={{ position: 'absolute', top: 8, left: 12, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>Series</span>
-                        <select
-                            className="input"
-                            style={{ paddingTop: 24, paddingBottom: 8, paddingLeft: 12, height: 56, borderRadius: 16, background: 'var(--bg-elevated)', border: 'none', appearance: 'none', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}
-                            value={seriesId}
-                            onChange={e => setSeriesId(e.target.value)}
-                        >
-                            <option value="">All Series</option>
-                            {userSeriesList.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-                        </select>
+                    <div
+                        style={{ position: 'relative', background: 'var(--bg-elevated)', borderRadius: 16, height: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 12px', cursor: 'pointer' }}
+                        onClick={() => setShowSeriesSelect(true)}
+                    >
+                        <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>Series</span>
+                        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
+                            {seriesId ? userSeriesList.find(s => s._id === seriesId)?.name : 'All Series'}
+                        </span>
                     </div>
 
-                    <div style={{ position: 'relative' }}>
-                        <span style={{ position: 'absolute', top: 8, left: 12, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>Sort</span>
-                        <select
-                            className="input"
-                            style={{ paddingTop: 24, paddingBottom: 8, paddingLeft: 12, height: 56, borderRadius: 16, background: 'var(--bg-elevated)', border: 'none', appearance: 'none', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}
-                            value={sort}
-                            onChange={e => setSort(e.target.value)}
-                        >
-                            <option value="number_asc">Number: Ascending</option>
-                            <option value="number_desc">Number: Descending</option>
-                        </select>
+                    <div
+                        style={{ position: 'relative', background: 'var(--bg-elevated)', borderRadius: 16, height: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 12px', cursor: 'pointer' }}
+                        onClick={() => setShowSortSelect(true)}
+                    >
+                        <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>Sort</span>
+                        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
+                            {sort === 'price_asc' && 'Price: Ascending'}
+                            {sort === 'price_desc' && 'Price: Descending'}
+                            {sort === 'number_asc' && 'Number: Ascending'}
+                            {sort === 'number_desc' && 'Number: Descending'}
+                        </span>
                     </div>
                 </div>
+
+                {/* Custom Modals for Selects */}
+                {showSeriesSelect && (
+                    <div className="modal-overlay" onClick={() => setShowSeriesSelect(false)}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()}>
+                            <div className="modal-handle" />
+                            <h3 className="h3" style={{ marginBottom: 16 }}>Select Series</h3>
+                            <div style={{ maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <button
+                                    className={`btn ${!seriesId ? 'btn-primary' : 'btn-secondary'}`}
+                                    style={{ justifyContent: 'flex-start', padding: '16px 20px' }}
+                                    onClick={() => { setSeriesId(''); setShowSeriesSelect(false); }}
+                                >
+                                    All Series
+                                </button>
+                                {userSeriesList.map(s => (
+                                    <button
+                                        key={s._id}
+                                        className={`btn ${seriesId === s._id ? 'btn-primary' : 'btn-secondary'}`}
+                                        style={{ justifyContent: 'flex-start', padding: '16px 20px' }}
+                                        onClick={() => { setSeriesId(s._id); setShowSeriesSelect(false); }}
+                                    >
+                                        {s.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showSortSelect && (
+                    <div className="modal-overlay" onClick={() => setShowSortSelect(false)}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()}>
+                            <div className="modal-handle" />
+                            <h3 className="h3" style={{ marginBottom: 16 }}>Sort By</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {[
+                                    { value: 'price_asc', label: 'Price: Ascending' },
+                                    { value: 'price_desc', label: 'Price: Descending' },
+                                    { value: 'number_asc', label: 'Number: Ascending' },
+                                    { value: 'number_desc', label: 'Number: Descending' },
+                                ].map(option => (
+                                    <button
+                                        key={option.value}
+                                        className={`btn ${sort === option.value ? 'btn-primary' : 'btn-secondary'}`}
+                                        style={{ justifyContent: 'flex-start', padding: '16px 20px' }}
+                                        onClick={() => { setSort(option.value); setShowSortSelect(false); }}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {filteredNfts.length > 0 ? (
