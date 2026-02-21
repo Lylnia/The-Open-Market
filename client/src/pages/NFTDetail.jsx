@@ -78,23 +78,54 @@ export default function NFTDetail() {
 
     return (
         <div className="page" style={{ paddingBottom: 100 }}>
-            {/* Header Text */}
-            <div style={{ padding: '8px 16px', marginBottom: 12 }}>
-                <h1 className="h1" style={{ fontSize: 26, letterSpacing: '-0.5px', marginBottom: 2 }}>{series.name} #{nft.mintNumber}</h1>
-                <Link to={`/collection/${series.collection?.slug}`} style={{ textDecoration: 'none' }}>
-                    <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 12 }}>{series.collection?.name}</p>
-                </Link>
+            {/* Header Section */}
+            <div className="flex justify-between items-start" style={{ padding: '0 20px', marginBottom: 20 }}>
+                <div>
+                    <h1 className="h1" style={{ fontSize: 32, letterSpacing: '-0.8px', marginBottom: 6 }}>{series.name} #{nft.mintNumber}</h1>
+                    <Link to={`/collection/${series.collection?.slug}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 16 }}>
+                        <span style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 15 }}>{series.collection?.name}</span>
+                    </Link>
 
-                <div className="flex items-center gap-8">
-                    <span className="badge" style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontWeight: 600 }}>
-                        SUPPLY {series.totalSupply}
-                    </span>
+                    {/* Badges */}
+                    <div className="flex items-center gap-8">
+                        <span className="badge" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', padding: '6px 12px', fontSize: 11, letterSpacing: '0.5px' }}>SUPPLY {series.totalSupply || 1}</span>
+                    </div>
                 </div>
+
+                {/* Share Button */}
+                <button
+                    className="btn-icon"
+                    onClick={() => {
+                        if (navigator.share) {
+                            navigator.share({ title: `${series.name} #${nft.mintNumber}`, url: window.location.href });
+                        } else {
+                            navigator.clipboard.writeText(window.location.href);
+                            showToast('Copied to clipboard', 'info');
+                        }
+                    }}
+                    style={{ background: 'transparent', color: 'var(--text-primary)', padding: 8, marginTop: -4 }}
+                >
+                    <IconShare size={24} />
+                </button>
             </div>
 
-            {/* Hero Viewport */}
-            <div style={{ margin: '0 16px', borderRadius: 24, background: 'var(--bg-card)', aspectRatio: '4/3', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {series.imageUrl ? <img src={series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <div className="skeleton" style={{ width: '100%', height: '100%' }} />}
+            {/* Large Image Display Container */}
+            <div style={{
+                margin: '0 16px 24px 16px',
+                aspectRatio: '1.05/1',
+                background: 'var(--bg-card)',
+                borderRadius: 24,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                boxShadow: 'var(--shadow-card)'
+            }}>
+                {series.imageUrl ? (
+                    <img src={series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                ) : (
+                    <div className="skeleton" style={{ width: '100%', height: '100%' }} />
+                )}
             </div>
 
             {/* Details & Metadata */}
