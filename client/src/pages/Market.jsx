@@ -72,6 +72,18 @@ export default function Market() {
         }
     }, [page]);
 
+    // Apply scroll lock when modals are open
+    useEffect(() => {
+        if (showSeriesSelect || showSortSelect) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [showSeriesSelect, showSortSelect]);
+
     const observer = useRef();
     const lastElementRef = useCallback(node => {
         if (isLoading) return;
@@ -95,7 +107,7 @@ export default function Market() {
         <div className="page" style={{ paddingBottom: 100 }}>
             <h1 className="h1" style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.6px', marginBottom: 16 }}>{t('market.title', 'Market')}</h1>
 
-            <div style={{ marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-base)', padding: '16px 0 24px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ position: 'relative' }}>
                     <IconSearch size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input

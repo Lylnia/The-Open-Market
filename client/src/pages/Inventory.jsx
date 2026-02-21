@@ -51,12 +51,22 @@ export default function Inventory() {
         if (seriesId) {
             arr = arr.filter(n => n.series?._id === seriesId);
         }
-        if (sort === 'price_asc') arr.sort((a, b) => a.listPrice - b.listPrice);
-        if (sort === 'price_desc') arr.sort((a, b) => b.listPrice - a.listPrice);
         if (sort === 'number_asc') arr.sort((a, b) => a.mintNumber - b.mintNumber);
         if (sort === 'number_desc') arr.sort((a, b) => b.mintNumber - a.mintNumber);
         return arr;
     }, [nfts, search, seriesId, sort]);
+
+    // Apply scroll lock when modals are open
+    useEffect(() => {
+        if (showSeriesSelect || showSortSelect) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [showSeriesSelect, showSortSelect]);
 
     if (loading) return <div className="page"><div className="loading-center"><div className="spinner" /></div></div>;
 
@@ -98,8 +108,6 @@ export default function Inventory() {
                     >
                         <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>Sort</span>
                         <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
-                            {sort === 'price_asc' && 'Price: Ascending'}
-                            {sort === 'price_desc' && 'Price: Descending'}
                             {sort === 'number_asc' && 'Number: Ascending'}
                             {sort === 'number_desc' && 'Number: Descending'}
                         </span>
@@ -142,8 +150,6 @@ export default function Inventory() {
                             <h3 className="h3" style={{ marginBottom: 16 }}>Sort By</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                 {[
-                                    { value: 'price_asc', label: 'Price: Ascending' },
-                                    { value: 'price_desc', label: 'Price: Descending' },
                                     { value: 'number_asc', label: 'Number: Ascending' },
                                     { value: 'number_desc', label: 'Number: Descending' },
                                 ].map(option => (

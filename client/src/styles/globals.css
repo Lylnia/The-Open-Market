@@ -184,7 +184,7 @@ input[type="number"] {
 .page {
   padding: 16px;
   /* Support for Telegram WebApp safe area */
-  padding-top: calc(var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 24px)) + 16px);
+  padding-top: calc(var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 24px)) + 32px);
   padding-bottom: 110px;
   min-height: 100vh;
   min-height: 100dvh;
