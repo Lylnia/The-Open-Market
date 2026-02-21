@@ -6,10 +6,23 @@ import { IconArrowUpRight, IconArrowDownLeft, IconShoppingCart, IconTag, IconExc
 export default function Transactions() {
     const { t } = useTranslation();
     const [filter, setFilter] = useState('');
-    const { data, loading } = useApi('/transactions', filter ? { type: filter } : {}, [filter]);
+    const [daysFilter, setDaysFilter] = useState('');
+
+    // Convert daysFilter to chronological query
+    const queryParams = {};
+    if (filter) queryParams.type = filter;
+    if (daysFilter) queryParams.days = daysFilter;
+
+    const { data, loading } = useApi('/transactions', Object.keys(queryParams).length ? queryParams : {}, [filter, daysFilter]);
 
     const types = ['', 'deposit', 'withdrawal', 'buy', 'sell', 'transfer_in', 'transfer_out', 'airdrop', 'referral_earning'];
-    const typeLabels = { '': t('transactions.all'), deposit: t('transactions.deposit'), withdrawal: t('transactions.withdrawal'), buy: t('transactions.buy'), sell: t('transactions.sell'), transfer_in: t('transactions.transfer_in'), transfer_out: t('transactions.transfer_out'), airdrop: t('transactions.airdrop'), referral_earning: t('transactions.referral') };
+    const typeLabels = { '': 'Tümü', deposit: t('transactions.deposit'), withdrawal: t('transactions.withdrawal'), buy: t('transactions.buy'), sell: t('transactions.sell'), transfer_in: t('transactions.transfer_in'), transfer_out: t('transactions.transfer_out'), airdrop: t('transactions.airdrop'), referral_earning: t('transactions.referral') };
+    const dateFilters = [
+        { value: '', label: 'Tüm Zamanlar' },
+        { value: '1', label: 'Son 24 Saat' },
+        { value: '7', label: 'Son 7 Gün' },
+        { value: '30', label: 'Son 30 Gün' }
+    ];
 
     // Aesthetic Maps
     const typeStyles = {
@@ -30,11 +43,34 @@ export default function Transactions() {
         <div className="page">
             <h1 className="h2" style={{ marginBottom: 16 }}>{t('transactions.title')}</h1>
 
-            <div className="scroll-h" style={{ marginBottom: 16 }}>
-                {types.map(type => (
-                    <button key={type} className={`btn btn-sm ${filter === type ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={() => setFilter(type)} style={{ whiteSpace: 'nowrap' }}>{typeLabels[type] || type}</button>
-                ))}
+            <div className="flex gap-8" style={{ marginBottom: 20 }}>
+                {/* Type Filter */}
+                <div style={{ flex: 1 }}>
+                    <select
+                        className="input"
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--bg-elevated)', border: '1px solid var(--border)', width: '100%', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
+                    >
+                        {types.map(type => (
+                            <option key={type} value={type}>{typeLabels[type] || type}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Date Filter */}
+                <div style={{ flex: 1 }}>
+                    <select
+                        className="input"
+                        value={daysFilter}
+                        onChange={(e) => setDaysFilter(e.target.value)}
+                        style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--bg-elevated)', border: '1px solid var(--border)', width: '100%', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
+                    >
+                        {dateFilters.map(df => (
+                            <option key={df.value} value={df.value}>{df.label}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {loading ? (

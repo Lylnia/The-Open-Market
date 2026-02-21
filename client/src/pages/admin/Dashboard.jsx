@@ -389,20 +389,20 @@ export default function Dashboard() {
 
                     {/* Collections */}
                     {tab === 'collections' && (
-                        <>
-                            {!showForm && (
+                        <div>
+                            {!showForm ? (
                                 <button className="btn btn-primary btn-block flex items-center justify-center gap-8" style={{ marginBottom: 16 }}
                                     onClick={() => setShowForm(true)}>
                                     <IconPlus size={16} /> Yeni Koleksiyon
                                 </button>
-                            )}
-                            {(showForm || editItem) && (
+                            ) : null}
+                            {(showForm || editItem) ? (
                                 <CollectionForm
                                     editData={editItem}
                                     onSuccess={() => { closeForm(); refetchCollections(); }}
                                     onCancel={closeForm}
                                 />
-                            )}
+                            ) : null}
                             <div className="flex-col gap-8">
                                 {collections?.map(col => (
                                     <div key={col._id} className="card flex items-center justify-between" style={{ padding: '12px 14px' }}>
@@ -422,26 +422,26 @@ export default function Dashboard() {
                                     </div>
                                 ))}
                             </div>
-                        </>
+                        </div>
                     )}
 
                     {/* Series */}
                     {tab === 'series' && (
-                        <>
-                            {!showForm && (
+                        <div>
+                            {!showForm ? (
                                 <button className="btn btn-primary btn-block flex items-center justify-center gap-8" style={{ marginBottom: 16 }}
                                     onClick={() => setShowForm(true)}>
                                     <IconPlus size={16} /> Yeni Seri
                                 </button>
-                            )}
-                            {(showForm || editItem) && (
+                            ) : null}
+                            {(showForm || editItem) ? (
                                 <SeriesForm
                                     collections={collections}
                                     editData={editItem}
                                     onSuccess={() => { closeForm(); refetchSeries(); }}
                                     onCancel={closeForm}
                                 />
-                            )}
+                            ) : null}
                             <div className="flex-col gap-8">
                                 {series?.map(s => (
                                     <div key={s._id} className="card" style={{ padding: '12px 14px' }}>
@@ -465,25 +465,25 @@ export default function Dashboard() {
                                     </div>
                                 ))}
                             </div>
-                        </>
+                        </div>
                     )}
 
                     {/* PreSales */}
                     {tab === 'presales' && (
-                        <>
-                            {!showForm && (
+                        <div>
+                            {!showForm ? (
                                 <button className="btn btn-primary btn-block flex items-center justify-center gap-8" style={{ marginBottom: 16 }}
                                     onClick={() => setShowForm(true)}>
                                     <IconPlus size={16} /> Yeni Ön Satış
                                 </button>
-                            )}
-                            {showForm && (
+                            ) : null}
+                            {showForm ? (
                                 <PreSaleForm
                                     seriesList={series}
                                     onSuccess={() => { closeForm(); refetchPresales(); }}
                                     onCancel={closeForm}
                                 />
-                            )}
+                            ) : null}
                             <div className="flex-col gap-8">
                                 {presales?.map(ps => {
                                     const progress = ps.totalSupply > 0 ? (ps.soldCount / ps.totalSupply) * 100 : 0;
@@ -508,7 +508,7 @@ export default function Dashboard() {
                                     );
                                 })}
                             </div>
-                        </>
+                        </div>
                     )}
 
                     {/* Users */}
@@ -529,7 +529,7 @@ export default function Dashboard() {
                     {/* Withdrawals */}
                     {tab === 'withdrawals' && (
                         <div className="flex-col gap-8">
-                            {withdrawals?.length === 0 && <div className="empty-state"><p>Bekleyen çekim yok</p></div>}
+                            {withdrawals?.length === 0 ? <div className="empty-state"><p>Bekleyen çekim yok</p></div> : null}
                             {withdrawals?.map(tx => (
                                 <div key={tx._id} className="card" style={{ padding: '16px', borderRadius: 16 }}>
                                     <div className="flex justify-between items-start" style={{ marginBottom: 12 }}>
@@ -550,12 +550,12 @@ export default function Dashboard() {
                                         </p>
                                     </div>
 
-                                    {tx.status === 'pending' && (
+                                    {tx.status === 'pending' ? (
                                         <div className="flex gap-8">
                                             <button className="btn btn-primary" style={{ flex: 1, background: 'var(--success)', border: 'none', color: '#fff' }} onClick={() => handleWithdrawal(tx._id, 'approve')}>Onayla</button>
                                             <button className="btn btn-secondary" style={{ flex: 1, color: 'var(--error)', borderColor: 'var(--error)' }} onClick={() => handleWithdrawal(tx._id, 'reject')}>Reddet</button>
                                         </div>
-                                    )}
+                                    ) : null}
                                 </div>
                             ))}
                         </div>
@@ -572,19 +572,19 @@ export default function Dashboard() {
 
                     {/* API Keys */}
                     {tab === 'api_keys' && (
-                        <>
-                            {!showForm && (
+                        <div>
+                            {!showForm ? (
                                 <button className="btn btn-primary btn-block flex items-center justify-center gap-8" style={{ marginBottom: 16 }}
                                     onClick={() => setShowForm(true)}>
                                     <IconPlus size={16} /> Yeni API Key
                                 </button>
-                            )}
-                            {showForm && (
+                            ) : null}
+                            {showForm ? (
                                 <ApiKeyForm
                                     onSuccess={() => { closeForm(); refetchApiKeys(); }}
                                     onCancel={closeForm}
                                 />
-                            )}
+                            ) : null}
                             <div className="flex-col gap-8">
                                 {apiKeys?.map(ak => (
                                     <div key={ak._id} className="card" style={{ padding: '16px', borderRadius: 16 }}>
@@ -606,10 +606,9 @@ export default function Dashboard() {
                                     </div>
                                 ))}
                             </div>
-                        </>
+                        </div>
                     )}
 
-                    {/* End of Main Content Area */}
                 </div>
             </div>
         </div>

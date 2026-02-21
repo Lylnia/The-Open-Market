@@ -6,10 +6,17 @@ const router = express.Router();
 
 router.get('/', auth, async (req, res) => {
     try {
-        const { type, cursor, limit = 20 } = req.query;
+        const { type, cursor, limit = 20, days } = req.query;
         const filter = { user: req.user._id };
+
         if (type) filter.type = type;
         if (cursor) filter._id = { $lt: cursor };
+
+        if (days) {
+            const dateLimit = new Date();
+            dateLimit.setDate(dateLimit.getDate() - parseInt(days));
+            filter.createdAt = { $gte: dateLimit };
+        }
 
         const transactions = await Transaction.find(filter)
             .populate('nft', 'mintNumber series')
