@@ -1,13 +1,14 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useApi } from '../hooks/useApi';
-import { IconWallet, IconHeart, IconHistory, IconTrophy, IconShield, IconChevronRight, IconCopy, IconLink, IconSettings, IconMoon, IconSun, IconLanguage } from '../assets/icons';
+import { IconWallet, IconHistory, IconTrophy, IconShield, IconChevronRight, IconCopy, IconLink, IconSun, IconMoon, IconLanguage } from '../assets/icons';
 import { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function Profile() {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const { user } = useAuth();
     const { data: nfts } = useApi('/user/nfts');
     const [copied, setCopied] = useState(false);
@@ -28,7 +29,6 @@ export default function Profile() {
 
     const menuItems = [
         { to: '/wallet', icon: IconWallet, label: 'Wallet', value: user ? `${(user.balance / 1e9).toFixed(2)} TON` : '' },
-        { to: '/favorites', icon: IconHeart, label: 'Favorites' },
         { to: '/transactions', icon: IconHistory, label: 'Transactions' },
         { to: '/leaderboard', icon: IconTrophy, label: 'Leaderboard' },
     ];
@@ -74,17 +74,21 @@ export default function Profile() {
 
                 {/* Profile Links */}
                 {menuItems.map(({ to, icon: Icon, label, value }, index) => (
-                    <Link key={to} to={to} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <div className="list-item flex items-center gap-12" style={{
+                    <div
+                        key={to}
+                        className="list-item flex items-center gap-12"
+                        style={{
                             padding: '14px 16px',
-                            borderBottom: index !== menuItems.length - 1 ? '1px solid var(--border)' : 'none'
-                        }}>
-                            <Icon size={22} style={{ color: 'var(--text-secondary)' }} />
-                            <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>{label}</span>
-                            {value && <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>{value}</span>}
-                            <IconChevronRight size={16} style={{ color: 'var(--text-muted)' }} />
-                        </div>
-                    </Link>
+                            borderBottom: index !== menuItems.length - 1 ? '1px solid var(--border)' : 'none',
+                            cursor: 'pointer'
+                        }}
+                        onClick={() => navigate(to)}
+                    >
+                        <Icon size={22} style={{ color: 'var(--text-secondary)' }} />
+                        <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>{label}</span>
+                        {value && <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>{value}</span>}
+                        <IconChevronRight size={16} style={{ color: 'var(--text-muted)' }} />
+                    </div>
                 ))}
             </div>
 
@@ -113,24 +117,28 @@ export default function Profile() {
             {/* Admin link */}
             {user?.isAdmin && (
                 <div className="card" style={{ padding: 0, marginBottom: 24 }}>
-                    <Link to="/admin" style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <div className="list-item flex items-center gap-12" style={{ padding: '14px 16px' }}>
-                            <IconShield size={22} style={{ color: 'var(--accent)' }} />
-                            <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>Admin Panel</span>
-                            <IconChevronRight size={16} style={{ color: 'var(--text-muted)' }} />
-                        </div>
-                    </Link>
+                    <div
+                        className="list-item flex items-center gap-12"
+                        style={{ padding: '14px 16px', cursor: 'pointer' }}
+                        onClick={() => navigate('/admin')}
+                    >
+                        <IconShield size={22} style={{ color: 'var(--accent)' }} />
+                        <span style={{ flex: 1, fontSize: 16, fontWeight: 500 }}>Admin Panel</span>
+                        <IconChevronRight size={16} style={{ color: 'var(--text-muted)' }} />
+                    </div>
                 </div>
             )}
 
             {/* My NFTs Header */}
-            <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
-                <Link to="/inventory" style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <div className="flex items-center gap-8">
-                        <h2 style={{ fontSize: 20, fontWeight: 700 }}>My NFTs</h2>
-                        <IconChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
-                    </div>
-                </Link>
+            <div
+                className="flex items-center justify-between"
+                style={{ marginBottom: 12, cursor: 'pointer' }}
+                onClick={() => navigate('/inventory')}
+            >
+                <div className="flex items-center gap-8">
+                    <h2 style={{ fontSize: 20, fontWeight: 700 }}>My NFTs</h2>
+                    <IconChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
+                </div>
                 <div style={{ background: 'var(--bg-card)', padding: '4px 12px', borderRadius: 100, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
                     {nfts?.length || 0}
                 </div>
