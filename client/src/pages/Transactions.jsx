@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../hooks/useApi';
-import CustomSelect from './common/CustomSelect';
+import CustomSelect from '../components/common/CustomSelect';
 import { IconArrowUpRight, IconArrowDownLeft, IconShoppingCart, IconTag, IconExchange, IconGift, IconUsers } from '../assets/icons';
 
 export default function Transactions() {
