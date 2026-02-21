@@ -72,7 +72,7 @@ export default function SeriesDetail() {
     };
 
     return (
-        <div className="page" style={{ paddingBottom: 100 }}>
+        <div className="page" style={{ paddingTop: 'calc(var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 24px)) + 32px)', paddingBottom: 120 }}>
             {/* Header Section */}
             <div className="flex justify-between items-start" style={{ padding: '0 20px', marginBottom: 20 }}>
                 <div>
@@ -130,7 +130,7 @@ export default function SeriesDetail() {
             </div>
 
             {/* Fixed Action Bottom Button */}
-            <div style={{ position: 'fixed', bottom: 32, left: 16, right: 16, zIndex: 50 }}>
+            <div style={{ position: 'fixed', bottom: 56, left: 16, right: 16, zIndex: 50 }}>
                 {isPresaleActive ? (
                     <button
                         className="btn btn-primary btn-block"

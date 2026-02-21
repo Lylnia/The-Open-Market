@@ -77,7 +77,7 @@ export default function NFTDetail() {
     };
 
     return (
-        <div className="page" style={{ paddingBottom: 100 }}>
+        <div className="page" style={{ paddingTop: 'calc(var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 24px)) + 32px)', paddingBottom: 120 }}>
             {/* Header Section */}
             <div className="flex justify-between items-start" style={{ padding: '0 20px', marginBottom: 20 }}>
                 <div>
@@ -198,7 +198,7 @@ export default function NFTDetail() {
             </div>
 
             {/* Fixed Bottom Action Panel */}
-            <div style={{ position: 'fixed', bottom: 32, left: 16, right: 16, zIndex: 50, display: 'flex', gap: 12 }}>
+            <div style={{ position: 'fixed', bottom: 56, left: 16, right: 16, zIndex: 50, display: 'flex', gap: 12 }}>
                 {!isOwner && nft.isListed && (
                     <button className="btn btn-primary" style={{ flex: 1, height: 50, fontSize: 17, borderRadius: 16, background: '#4DB8FF', color: '#FFFFFF', border: 'none' }} onClick={handleBuy} disabled={action || !user}>
                         {action === 'buy' ? '...' : `Buy ${(nft.listPrice / 1e9).toFixed(2)} TON`}
