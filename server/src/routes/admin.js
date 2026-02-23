@@ -232,6 +232,62 @@ router.post('/deposit', async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
+// ===== USER INVENTORY MANAGEMENT =====
+router.get('/users/:id/nfts', async (req, res) => {
+    try {
+        const nfts = await NFT.find({ owner: req.params.id })
+            .populate('series', 'name slug imageUrl price collection')
+            .sort({ createdAt: -1 })
+            .lean();
+        res.json(nfts);
+    } catch (e) { res.status(500).json({ error: 'Failed' }); }
+});
+
+router.post('/nfts/:id/transfer-system', async (req, res) => {
+    try {
+        const nft = await NFT.findById(req.params.id);
+        if (!nft) return res.status(404).json({ error: 'NFT not found' });
+
+        // System account is inherently the admin who triggered this, or a fixed ID. 
+        // We will assign it to the req.user._id (the admin execution context).
+        const oldOwner = nft.owner;
+        nft.owner = req.user._id;
+        nft.isListed = false;
+        nft.listPrice = 0;
+        await nft.save();
+
+        await Transaction.create({
+            user: oldOwner, type: 'sell', amount: 0, nft: nft._id, toUser: req.user._id, status: 'completed',
+            description: 'Admin Transfer: Confiscated to System'
+        });
+
+        res.json({ success: true, message: 'NFT transferred to system' });
+    } catch (e) { res.status(500).json({ error: 'Failed' }); }
+});
+
+router.post('/nfts/:id/burn', async (req, res) => {
+    try {
+        const nft = await NFT.findById(req.params.id).populate('series');
+        if (!nft) return res.status(404).json({ error: 'NFT not found' });
+
+        const series = nft.series;
+
+        // Burn process: delete NFT and decrement series minted count
+        await NFT.findByIdAndDelete(nft._id);
+        if (series && series.mintedCount > 0) {
+            series.mintedCount -= 1;
+            await series.save();
+        }
+
+        await Transaction.create({
+            user: nft.owner, type: 'sell', amount: 0, nft: nft._id, status: 'completed',
+            description: 'Admin Action: NFT Burned'
+        });
+
+        res.json({ success: true, message: 'NFT burned' });
+    } catch (e) { res.status(500).json({ error: 'Failed' }); }
+});
+
 // ===== API KEYS =====
 router.get('/api-keys', async (req, res) => {
     try { res.json(await ApiKey.find().sort({ createdAt: -1 }).lean()); } catch (e) { res.status(500).json({ error: 'Failed' }); }

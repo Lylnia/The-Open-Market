@@ -282,6 +282,87 @@ function ApiKeyForm({ onSuccess, onCancel }) {
         </div>
     );
 }
+
+// ========== USER EDIT FORM ==========
+function UserEditForm({ user, onSuccess, onCancel }) {
+    const [form, setForm] = useState({ balance: user.balance / 1e9, isAdmin: user.isAdmin });
+    const [loading, setLoading] = useState(false);
+    const { showToast } = useToast();
+    const { data: nfts, refetch: refetchNfts } = useApi(`/admin/users/${user._id}/nfts`);
+
+    const handleSubmit = async () => {
+        try {
+            setLoading(true);
+            await api.put(`/admin/users/${user._id}`, { balance: Math.floor(form.balance * 1e9), isAdmin: form.isAdmin });
+            if (typeof showToast === 'function') showToast('Kullanıcı güncellendi', 'success');
+            onSuccess();
+        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Error', 'error'); }
+        finally { setLoading(false); }
+    };
+
+    const handleTransfer = async (nftId) => {
+        if (!confirm('Bu NFT kullanıcının elinden alınıp SISTEM hesabına aktarılacak. Emin misiniz?')) return;
+        try {
+            await api.post(`/admin/nfts/${nftId}/transfer-system`);
+            if (typeof showToast === 'function') showToast('NFT sisteme aktarıldı', 'success');
+            refetchNfts();
+        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Transfer failed', 'error'); }
+    };
+
+    const handleBurn = async (nftId) => {
+        if (!confirm('DİKKAT: Bu NFT kalıcı olarak YAKILACAK (Silinecek). Emin misiniz?')) return;
+        try {
+            await api.post(`/admin/nfts/${nftId}/burn`);
+            if (typeof showToast === 'function') showToast('NFT kalıcı olarak yakıldı', 'success');
+            refetchNfts();
+        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Burn failed', 'error'); }
+    };
+
+    return (
+        <div className="card" style={{ padding: 20, marginBottom: 24, border: '1px solid var(--accent)' }}>
+            <h3 className="h3" style={{ marginBottom: 16 }}>Kullanıcı Düzenle: @{user.username || user.firstName}</h3>
+
+            <div className="grid-2" style={{ marginBottom: 16 }}>
+                <Field label="Bakiye (TON)">
+                    <input className="input" type="number" step="0.01" value={form.balance} onChange={e => setForm(prev => ({ ...prev, balance: e.target.value }))} />
+                </Field>
+                <Field label="Yetki">
+                    <select className="input" value={form.isAdmin ? 'true' : 'false'} onChange={e => setForm(prev => ({ ...prev, isAdmin: e.target.value === 'true' }))}>
+                        <option value="false">Normal Kullanıcı</option>
+                        <option value="true">Admin</option>
+                    </select>
+                </Field>
+            </div>
+
+            <div className="flex gap-8" style={{ marginBottom: 24 }}>
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={loading}>{loading ? '...' : 'Kaydet'}</button>
+                <button className="btn btn-secondary" onClick={onCancel}>İptal</button>
+            </div>
+
+            <h4 className="h4" style={{ marginBottom: 12 }}>Kullanıcı Envanteri ({nfts?.length || 0})</h4>
+            {nfts && nfts.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+                    {nfts.map(nft => (
+                        <div key={nft._id} style={{ background: 'var(--bg-elevated)', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                            <div style={{ aspectRatio: '1', background: 'var(--bg-base)' }}>
+                                {nft.series?.imageUrl && <img src={nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+                            </div>
+                            <div style={{ padding: 8 }}>
+                                <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nft.series?.name} #{nft.mintNumber}</p>
+                                <div className="flex-col gap-4">
+                                    <button className="btn btn-sm btn-secondary" style={{ fontSize: 11, padding: '4px 8px', height: 'auto', minHeight: 28 }} onClick={() => handleTransfer(nft._id)}>Sisteme Aktar</button>
+                                    <button className="btn btn-sm" style={{ fontSize: 11, padding: '4px 8px', height: 'auto', minHeight: 28, background: 'rgba(255, 59, 48, 0.1)', color: 'var(--error)' }} onClick={() => handleBurn(nft._id)}>Yak (Burn)</button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="caption">Kullanıcının envanterinde NFT bulunmuyor.</p>
+            )}
+        </div>
+    );
+}
 // ========== MAIN DASHBOARD ==========
 export default function Dashboard() {
     const { t } = useTranslation();
@@ -513,16 +594,29 @@ export default function Dashboard() {
 
                     {/* Users */}
                     {tab === 'users' && (
-                        <div className="flex-col gap-4">
-                            {usersData?.users?.map(u => (
-                                <div key={u._id} className="card flex items-center gap-12" style={{ padding: '10px 14px' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <p style={{ fontWeight: 500, fontSize: 13 }}>@{u.username || 'user'} — {u.firstName}</p>
-                                        <p className="caption">Bakiye: {(u.balance / 1e9).toFixed(2)} TON | TG ID: {u.telegramId}</p>
+                        <div>
+                            {editItem && !showForm ? (
+                                <UserEditForm
+                                    user={editItem}
+                                    onSuccess={() => { setEditItem(null); usersData.refetch?.(); }}
+                                    onCancel={() => setEditItem(null)}
+                                />
+                            ) : null}
+                            <div className="flex-col gap-8">
+                                {usersData?.users?.map(u => (
+                                    <div key={u._id} className="card flex items-center gap-12" style={{ padding: '12px 16px' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <div className="flex items-center gap-8" style={{ marginBottom: 4 }}>
+                                                <p style={{ fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>@{u.username || 'user'} {u.firstName ? `(${u.firstName})` : ''}</p>
+                                                {u.isAdmin && <span className="tag" style={{ background: 'var(--accent)', color: '#fff' }}>Admin</span>}
+                                            </div>
+                                            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Bakiye: <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{(u.balance / 1e9).toFixed(2)} TON</span></p>
+                                            <p className="caption" style={{ marginTop: 2 }}>ID: {u.telegramId}</p>
+                                        </div>
+                                        <button className="btn btn-sm btn-secondary" style={{ borderRadius: 8, padding: '6px 16px' }} onClick={() => { setEditItem(u); setShowForm(false); }}>Düzenle</button>
                                     </div>
-                                    <span className="tag">{u.isAdmin ? 'Admin' : 'User'}</span>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     )}
 

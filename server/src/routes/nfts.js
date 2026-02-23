@@ -347,4 +347,29 @@ router.post('/:id/delist', auth, asyncHandler(async (req, res) => {
     res.json({ success: true });
 }));
 
+// Burn (permanently delete) NFT
+router.post('/:id/burn', auth, asyncHandler(async (req, res) => {
+    const nft = await NFT.findById(req.params.id).populate('series');
+    if (!nft) throw new AppError('NFT not found', 404);
+    if (nft.owner.toString() !== req.user._id.toString()) {
+        throw new AppError('Not the owner', 403);
+    }
+
+    const series = nft.series;
+
+    // Delete NFT and decrement series minted count
+    await NFT.findByIdAndDelete(nft._id);
+    if (series && series.mintedCount > 0) {
+        series.mintedCount -= 1;
+        await series.save();
+    }
+
+    await Transaction.create({
+        user: req.user._id, type: 'sell', amount: 0, nft: nft._id, status: 'completed',
+        description: `Burned: ${series?.name || 'NFT'} #${nft.mintNumber}`
+    });
+
+    res.json({ success: true, message: 'NFT successfully burned' });
+}));
+
 module.exports = router;

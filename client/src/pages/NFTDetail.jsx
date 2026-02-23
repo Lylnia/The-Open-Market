@@ -20,6 +20,7 @@ export default function NFTDetail() {
     const [showBidModal, setShowBidModal] = useState(false);
     const [showListModal, setShowListModal] = useState(false);
     const [showConfirmListModal, setShowConfirmListModal] = useState(false);
+    const [showBurnConfirmModal, setShowBurnConfirmModal] = useState(false);
     const { showToast } = useToast();
     const { tg, showBackButton } = useTelegram();
 
@@ -82,6 +83,20 @@ export default function NFTDetail() {
 
     const handleAcceptBid = async (bidId) => {
         try { await api.post(`/bids/${bidId}/accept`); refetch(); } catch (e) { showToast(e?.error || 'Failed', 'error'); }
+    };
+
+    const handleBurn = async () => {
+        try {
+            setAction('burn');
+            await api.post(`/nfts/${id}/burn`);
+            setShowBurnConfirmModal(false);
+            showToast('NFT successfully burned', 'success');
+            navigate('/profile'); // Redirect to profile or inventory since item is gone
+        } catch (e) {
+            showToast(e?.error || 'Failed to burn NFT', 'error');
+        } finally {
+            setAction(null);
+        }
     };
 
     return (
@@ -212,6 +227,7 @@ export default function NFTDetail() {
                     <>
                         <button className="btn btn-primary" style={{ flex: 1, height: 50, fontSize: 16, borderRadius: 16 }} onClick={() => setShowListModal(true)}>{t('nft.list_for_sale')}</button>
                         <Link to={`/transfer?nft=${id}`} className="btn btn-secondary" style={{ flex: 0.8, height: 50, fontSize: 16, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>{t('nft.transfer')}</Link>
+                        <button className="btn btn-secondary" style={{ flex: 0.6, height: 50, fontSize: 16, borderRadius: 16, border: '1px solid var(--error)', color: 'var(--error)' }} onClick={() => setShowBurnConfirmModal(true)}>Burn</button>
                     </>
                 )}
                 {isOwner && nft.isListed && (
@@ -278,6 +294,28 @@ export default function NFTDetail() {
                         <div className="flex gap-12">
                             <button className="btn btn-secondary" style={{ flex: 1, height: 50, borderRadius: 16 }} onClick={() => setShowConfirmListModal(false)}>Cancel</button>
                             <button className="btn btn-primary" style={{ flex: 1, height: 50, borderRadius: 16, background: 'var(--success)', border: 'none', color: '#fff' }} onClick={handleList} disabled={action === 'list'}>{action === 'list' ? '...' : 'Yes, List It'}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Burn Confirmation Modal */}
+            {showBurnConfirmModal && (
+                <div className="modal-overlay" onClick={() => setShowBurnConfirmModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-handle" />
+                        <h3 className="h2" style={{ marginBottom: 8, color: 'var(--error)', textAlign: 'center' }}>Burn NFT?</h3>
+                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 16, padding: 16, marginBottom: 24, textAlign: 'center', border: '1px solid var(--error)' }}>
+                            <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--error)', marginBottom: 8 }}>WARNING</p>
+                            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
+                                You are about to permanently destroy:
+                            </p>
+                            <p className="h3" style={{ color: 'var(--text-primary)', marginBottom: 8 }}>{series.name} #{nft.mintNumber}</p>
+                            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>This action cannot be undone.</p>
+                        </div>
+                        <div className="flex gap-12">
+                            <button className="btn btn-secondary" style={{ flex: 1, height: 50, borderRadius: 16 }} onClick={() => setShowBurnConfirmModal(false)}>Cancel</button>
+                            <button className="btn btn-primary" style={{ flex: 1, height: 50, borderRadius: 16, background: 'var(--error)', border: 'none', color: '#fff' }} onClick={handleBurn} disabled={action === 'burn'}>{action === 'burn' ? '...' : 'Yes, Burn It'}</button>
                         </div>
                     </div>
                 </div>
