@@ -884,3 +884,24 @@ input[type="number"] {
   line-height: 1.5;
   max-width: 280px;
 }
+
+/* ── Admin Dashboard Layout & Responsive Utils ── */
+:root {
+  --admin-sidebar-width: 0px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --admin-sidebar-width: 240px;
+  }
+
+  .display-mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+}
