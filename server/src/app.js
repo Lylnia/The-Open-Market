@@ -116,9 +116,17 @@ app.get('/api/user/nfts', require('./middleware/auth').auth, asyncHandler(async 
 }));
 
 // Health check + Maintenance mode
-app.get('/api/health', (req, res) => {
-    const maintenance = process.env.MAINTENANCE_MODE === 'true';
-    res.json({ status: maintenance ? 'maintenance' : 'ok', maintenance, timestamp: Date.now() });
+app.get('/api/health', async (req, res) => {
+    try {
+        const Settings = require('./models/Settings');
+        const settings = await Settings.findOne();
+        const maintenance = settings ? settings.isMaintenance : (process.env.MAINTENANCE_MODE === 'true');
+        res.json({ status: maintenance ? 'maintenance' : 'ok', maintenance, timestamp: Date.now() });
+    } catch (error) {
+        // Fallback to env var if DB fails
+        const maintenance = process.env.MAINTENANCE_MODE === 'true';
+        res.json({ status: maintenance ? 'maintenance' : 'ok', maintenance, timestamp: Date.now() });
+    }
 });
 
 // Handle undefined routes

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../../hooks/useApi';
 import { useToast } from '../../contexts/ToastContext';
+import CustomSelect from '../../components/common/CustomSelect';
 import api from '../../services/api';
 import { IconPlus } from '../../assets/icons';
 
@@ -251,6 +252,35 @@ function AirdropForm({ seriesList, onSuccess, onCancel }) {
         </div>
     );
 }
+
+// ========== CONFIRM ACTION MODAL ==========
+function AdminActionModal({ isOpen, title, message, onConfirm, onCancel, confirmText = 'Onayla', isDanger = false }) {
+    if (!isOpen) return null;
+    return (
+        <div className="modal-overlay" style={{ zIndex: 99999 }}>
+            <div className="modal-content" style={{ maxWidth: 320, padding: 24, textAlign: 'center' }}>
+                <h3 className="h2" style={{ marginBottom: 8 }}>{title}</h3>
+                <p className="body" style={{ color: 'var(--text-secondary)', marginBottom: 24, padding: '0 8px' }}>
+                    {message}
+                </p>
+                <div className="flex-col gap-8">
+                    <button
+                        className="btn btn-primary"
+                        style={{ width: '100%', background: isDanger ? 'var(--error)' : 'var(--accent)' }}
+                        onClick={onConfirm}>
+                        {confirmText}
+                    </button>
+                    <button
+                        className="btn btn-secondary"
+                        style={{ width: '100%' }}
+                        onClick={onCancel}>
+                        İptal
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
 // ========== API KEY FORM ==========
 function ApiKeyForm({ onSuccess, onCancel }) {
     const [name, setName] = useState('');
@@ -284,7 +314,7 @@ function ApiKeyForm({ onSuccess, onCancel }) {
 }
 
 // ========== USER EDIT FORM ==========
-function UserEditForm({ user, onSuccess, onCancel }) {
+function UserEditForm({ user, onSuccess, onCancel, onActionRequest }) {
     const [form, setForm] = useState({ balance: user.balance / 1e9, isAdmin: user.isAdmin });
     const [loading, setLoading] = useState(false);
     const { showToast } = useToast();
@@ -298,24 +328,6 @@ function UserEditForm({ user, onSuccess, onCancel }) {
             onSuccess();
         } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Error', 'error'); }
         finally { setLoading(false); }
-    };
-
-    const handleTransfer = async (nftId) => {
-        if (!confirm('Bu NFT kullanıcının elinden alınıp SISTEM hesabına aktarılacak. Emin misiniz?')) return;
-        try {
-            await api.post(`/admin/nfts/${nftId}/transfer-system`);
-            if (typeof showToast === 'function') showToast('NFT sisteme aktarıldı', 'success');
-            refetchNfts();
-        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Transfer failed', 'error'); }
-    };
-
-    const handleBurn = async (nftId) => {
-        if (!confirm('DİKKAT: Bu NFT kalıcı olarak YAKILACAK (Silinecek). Emin misiniz?')) return;
-        try {
-            await api.post(`/admin/nfts/${nftId}/burn`);
-            if (typeof showToast === 'function') showToast('NFT kalıcı olarak yakıldı', 'success');
-            refetchNfts();
-        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Burn failed', 'error'); }
     };
 
     return (
@@ -350,8 +362,18 @@ function UserEditForm({ user, onSuccess, onCancel }) {
                             <div style={{ padding: 8 }}>
                                 <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nft.series?.name} #{nft.mintNumber}</p>
                                 <div className="flex-col gap-4">
-                                    <button className="btn btn-sm btn-secondary" style={{ fontSize: 11, padding: '4px 8px', height: 'auto', minHeight: 28 }} onClick={() => handleTransfer(nft._id)}>Sisteme Aktar</button>
-                                    <button className="btn btn-sm" style={{ fontSize: 11, padding: '4px 8px', height: 'auto', minHeight: 28, background: 'rgba(255, 59, 48, 0.1)', color: 'var(--error)' }} onClick={() => handleBurn(nft._id)}>Yak (Burn)</button>
+                                    <button className="btn btn-sm btn-secondary" style={{ fontSize: 11, padding: '4px 8px', height: 'auto', minHeight: 28 }}
+                                        onClick={() => onActionRequest({
+                                            type: 'transfer-system', id: nft._id, title: 'NFT Sisteme Aktar',
+                                            message: 'Bu NFT kullanıcının elinden alınıp SISTEM hesabına aktarılacak. Emin misiniz?'
+                                        })}>Sisteme Aktar
+                                    </button>
+                                    <button className="btn btn-sm" style={{ fontSize: 11, padding: '4px 8px', height: 'auto', minHeight: 28, background: 'rgba(255, 59, 48, 0.1)', color: 'var(--error)' }}
+                                        onClick={() => onActionRequest({
+                                            type: 'burn', id: nft._id, title: 'NFT Yak', isDanger: true,
+                                            message: 'DİKKAT: Bu NFT kalıcı olarak YAKILACAK (Silinecek). Emin misiniz?'
+                                        })}>Yak (Burn)
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -369,6 +391,7 @@ export default function Dashboard() {
     const [tab, setTab] = useState('stats');
     const [showForm, setShowForm] = useState(false);
     const [editItem, setEditItem] = useState(null);
+    const [userSearch, setUserSearch] = useState('');
     const { showToast } = useToast();
 
     const { data: stats } = useApi('/admin/stats');
@@ -378,24 +401,60 @@ export default function Dashboard() {
     const { data: usersData } = useApi(tab === 'users' ? '/admin/users' : null);
     const { data: withdrawals, refetch: refetchWithdrawals } = useApi(tab === 'withdrawals' ? '/admin/withdrawals' : null);
     const { data: apiKeys, refetch: refetchApiKeys } = useApi(tab === 'api_keys' ? '/admin/api-keys' : null);
+    const { data: appSettings, refetch: refetchSettings } = useApi(tab === 'stats' ? '/admin/settings' : null);
 
     const tabs = ['stats', 'collections', 'series', 'presales', 'users', 'withdrawals', 'airdrop', 'api_keys'];
 
-    const handleDelete = async (type, id) => {
-        if (!confirm('Silmek istediğinize emin misiniz?')) return;
+    const [modalConfig, setModalConfig] = useState(null);
+
+    const executeAction = async () => {
+        if (!modalConfig) return;
+        const { actionType, type, id } = modalConfig;
+
         try {
-            await api.delete(`/admin/${type}/${id}`);
-            if (type === 'collections') refetchCollections();
-            if (type === 'series') refetchSeries();
-            if (type === 'presales') refetchPresales();
-            if (type === 'api-keys') refetchApiKeys();
-        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Failed', 'error'); }
+            if (actionType === 'delete') {
+                await api.delete(`/admin/${type}/${id}`);
+                if (type === 'collections') refetchCollections();
+                if (type === 'series') refetchSeries();
+                if (type === 'presales') refetchPresales();
+                if (type === 'api-keys') refetchApiKeys();
+            } else if (actionType === 'transfer-system') {
+                await api.post(`/admin/nfts/${id}/transfer-system`);
+                if (typeof showToast === 'function') showToast('NFT sisteme aktarıldı', 'success');
+            } else if (actionType === 'burn') {
+                await api.post(`/admin/nfts/${id}/burn`);
+                if (typeof showToast === 'function') showToast('NFT kalıcı olarak yakıldı', 'success');
+            }
+        } catch (e) {
+            if (typeof showToast === 'function') showToast(e?.error || 'Failed', 'error');
+        } finally {
+            setModalConfig(null);
+        }
+    };
+
+    const requestDelete = (type, id) => {
+        setModalConfig({
+            actionType: 'delete', type, id, title: 'Silme İşlemi', isDanger: true,
+            message: 'Bu öğeyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.', confirmText: 'Sil'
+        });
     };
 
     const handleWithdrawal = async (id, action) => {
         try {
             await api.post(`/admin/withdrawals/${id}/${action}`);
             refetchWithdrawals();
+        } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Failed', 'error'); }
+    };
+
+    const toggleMaintenance = async () => {
+        if (!appSettings) return;
+        const newState = !appSettings.isMaintenance;
+        if (newState && !window.confirm('DİKKAT: Bakım modunu açarsanız sizin dışınızdaki (Admin olmayan) tüm kullanıcıların erişimi anında kesilecektir. Emin misiniz?')) return;
+
+        try {
+            await api.put('/admin/settings', { isMaintenance: newState });
+            if (typeof showToast === 'function') showToast(`Bakım Modu ${newState ? 'Aktif' : 'Kapalı'}`, 'success');
+            refetchSettings();
         } catch (e) { if (typeof showToast === 'function') showToast(e?.error || 'Failed', 'error'); }
     };
 
@@ -430,20 +489,27 @@ export default function Dashboard() {
                 </div>
             </div>
 
+            <AdminActionModal
+                isOpen={!!modalConfig}
+                title={modalConfig?.title}
+                message={modalConfig?.message}
+                confirmText={modalConfig?.confirmText || 'Onayla'}
+                isDanger={modalConfig?.isDanger}
+                onConfirm={executeAction}
+                onCancel={() => setModalConfig(null)}
+            />
+
             {/* Mobile Top Navigation */}
             <div className="admin-mobile-nav display-mobile" style={{
                 position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-elevated)',
                 borderBottom: '1px solid var(--border)', padding: '12px 16px'
             }}>
-                <h1 className="h2" style={{ fontSize: 20, marginBottom: 12 }}>Admin Panel</h1>
-                <div className="scroll-h">
-                    {tabs.map(tabName => (
-                        <button key={tabName} className={`btn btn-sm ${tab === tabName ? 'btn-primary' : 'btn-secondary'}`}
-                            onClick={() => { setTab(tabName); closeForm(); }} style={{ whiteSpace: 'nowrap' }}>
-                            {t(`admin.${tabName}`)}
-                        </button>
-                    ))}
-                </div>
+                <h1 className="h2" style={{ fontSize: 20, marginBottom: 16 }}>Admin Panel</h1>
+                <CustomSelect
+                    value={tab}
+                    onChange={(val) => { setTab(val); closeForm(); }}
+                    options={tabs.map(tOption => ({ value: tOption, label: t(`admin.${tOption}`) }))}
+                />
             </div>
 
             {/* Main Content Area */}
@@ -452,19 +518,38 @@ export default function Dashboard() {
 
                     {/* Stats */}
                     {tab === 'stats' && stats && (
-                        <div className="grid-2" style={{ marginBottom: 24 }}>
-                            {[
-                                { label: t('admin.total_users'), value: stats.userCount },
-                                { label: t('admin.total_nfts'), value: stats.nftCount },
-                                { label: t('admin.total_orders'), value: stats.orderCount },
-                                { label: t('admin.total_volume'), value: `${(stats.totalVolume / 1e9).toFixed(0)} TON` },
-                                { label: t('admin.pending_withdrawals'), value: stats.pendingWithdrawals },
-                            ].map(({ label, value }) => (
-                                <div key={label} className="card" style={{ padding: '16px', textAlign: 'center' }}>
-                                    <p className="stat-value">{value}</p>
-                                    <p className="stat-label">{label}</p>
+                        <div className="flex-col gap-24">
+                            {/* Maintenance Toggle */}
+                            {appSettings && (
+                                <div className="card flex items-center justify-between" style={{ padding: '16px 20px', border: appSettings.isMaintenance ? '1px solid var(--warning)' : '1px solid transparent', background: appSettings.isMaintenance ? 'rgba(255, 149, 0, 0.05)' : 'var(--bg-elevated)' }}>
+                                    <div>
+                                        <p style={{ fontWeight: 600, fontSize: 16, color: appSettings.isMaintenance ? 'var(--warning)' : 'var(--text-primary)' }}>Bakım Modu</p>
+                                        <p className="caption" style={{ marginTop: 4 }}>Uygulamayı geçici olarak tüm kullanıcılara kapatır.</p>
+                                    </div>
+                                    <button
+                                        className={`btn btn-sm ${appSettings.isMaintenance ? 'btn-primary' : 'btn-secondary'}`}
+                                        style={{ background: appSettings.isMaintenance ? 'var(--warning)' : 'var(--bg-card)', color: appSettings.isMaintenance ? '#fff' : 'var(--text-primary)' }}
+                                        onClick={toggleMaintenance}
+                                    >
+                                        {appSettings.isMaintenance ? 'Açık' : 'Kapalı'}
+                                    </button>
                                 </div>
-                            ))}
+                            )}
+
+                            <div className="grid-2" style={{ marginBottom: 24 }}>
+                                {[
+                                    { label: t('admin.total_users'), value: stats.userCount },
+                                    { label: t('admin.total_nfts'), value: stats.nftCount },
+                                    { label: t('admin.total_orders'), value: stats.orderCount },
+                                    { label: t('admin.total_volume'), value: `${(stats.totalVolume / 1e9).toFixed(0)} TON` },
+                                    { label: t('admin.pending_withdrawals'), value: stats.pendingWithdrawals },
+                                ].map(({ label, value }) => (
+                                    <div key={label} className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                        <p className="stat-value">{value}</p>
+                                        <p className="stat-label">{label}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
@@ -498,7 +583,7 @@ export default function Dashboard() {
                                         </div>
                                         <div className="flex gap-4">
                                             <button className="btn btn-sm btn-secondary" onClick={() => { setEditItem(col); setShowForm(false); }}>Düzenle</button>
-                                            <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('collections', col._id)}>Sil</button>
+                                            <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => requestDelete('collections', col._id)}>Sil</button>
                                         </div>
                                     </div>
                                 ))}
@@ -540,7 +625,7 @@ export default function Dashboard() {
                                             </div>
                                             <div className="flex gap-4">
                                                 <button className="btn btn-sm btn-secondary" onClick={() => { setEditItem(s); setShowForm(false); }}>Düzenle</button>
-                                                <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('series', s._id)}>Sil</button>
+                                                <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => requestDelete('series', s._id)}>Sil</button>
                                             </div>
                                         </div>
                                     </div>
@@ -577,7 +662,7 @@ export default function Dashboard() {
                                                 </div>
                                                 <div className="flex gap-4 items-center">
                                                     <span className="tag">{ps.isActive ? 'Aktif' : 'Pasif'}</span>
-                                                    <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => handleDelete('presales', ps._id)}>Sil</button>
+                                                    <button className="btn btn-sm" style={{ color: 'var(--error)' }} onClick={() => requestDelete('presales', ps._id)}>Sil</button>
                                                 </div>
                                             </div>
                                             <div style={{ marginBottom: 4 }} className="flex justify-between">
@@ -600,10 +685,31 @@ export default function Dashboard() {
                                     user={editItem}
                                     onSuccess={() => { setEditItem(null); usersData.refetch?.(); }}
                                     onCancel={() => setEditItem(null)}
+                                    onActionRequest={(actionData) => setModalConfig({ ...actionData, actionType: actionData.type })}
                                 />
                             ) : null}
+
+                            {!editItem && (
+                                <div style={{ marginBottom: 16 }}>
+                                    <input
+                                        type="text"
+                                        className="input"
+                                        placeholder="Kullanıcı adı, isim veya TG ID ile ara..."
+                                        value={userSearch}
+                                        onChange={(e) => setUserSearch(e.target.value)}
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+                            )}
+
                             <div className="flex-col gap-8">
-                                {usersData?.users?.map(u => (
+                                {usersData?.users?.filter(u => {
+                                    if (!userSearch) return true;
+                                    const s = userSearch.toLowerCase();
+                                    return (u.username?.toLowerCase().includes(s)) ||
+                                        (u.firstName?.toLowerCase().includes(s)) ||
+                                        (String(u.telegramId).includes(s));
+                                }).map(u => (
                                     <div key={u._id} className="card flex items-center gap-12" style={{ padding: '12px 16px' }}>
                                         <div style={{ flex: 1 }}>
                                             <div className="flex items-center gap-8" style={{ marginBottom: 4 }}>
@@ -691,7 +797,7 @@ export default function Dashboard() {
                                                 <span className="tag" style={{ background: ak.isActive ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)', color: ak.isActive ? 'var(--success)' : 'var(--error)' }}>
                                                     {ak.isActive ? 'Aktif' : 'Pasif'}
                                                 </span>
-                                                <button className="btn btn-sm" style={{ color: 'var(--error)', padding: '6px 12px' }} onClick={() => handleDelete('api-keys', ak._id)}>Sil</button>
+                                                <button className="btn btn-sm" style={{ color: 'var(--error)', padding: '6px 12px' }} onClick={() => requestDelete('api-keys', ak._id)}>Sil</button>
                                             </div>
                                         </div>
                                         <div style={{ background: 'var(--bg-base)', padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

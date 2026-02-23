@@ -10,6 +10,7 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const Order = require('../models/Order');
 const ApiKey = require('../models/ApiKey');
+const Settings = require('../models/Settings');
 
 const router = express.Router();
 
@@ -44,6 +45,29 @@ const pick = (obj, keys) => keys.reduce((o, k) => { if (obj[k] !== undefined) o[
 const COLLECTION_FIELDS = ['name', 'slug', 'logoUrl', 'bannerUrl', 'order', 'isActive', 'description'];
 const SERIES_FIELDS = ['name', 'slug', 'collection', 'imageUrl', 'price', 'totalSupply', 'royaltyPercent', 'isActive', 'description', 'attributes'];
 const USER_EDITABLE_FIELDS = ['isAdmin', 'balance'];
+
+// ===== GLOBAL SETTINGS =====
+router.get('/settings', async (req, res) => {
+    try {
+        let settings = await Settings.findOne();
+        if (!settings) settings = await Settings.create({});
+        res.json(settings);
+    } catch (error) { res.status(500).json({ error: 'Failed to fetch settings' }); }
+});
+
+router.put('/settings', async (req, res) => {
+    try {
+        let settings = await Settings.findOne();
+        if (!settings) settings = new Settings();
+
+        if (typeof req.body.isMaintenance === 'boolean') {
+            settings.isMaintenance = req.body.isMaintenance;
+        }
+
+        await settings.save();
+        res.json({ success: true, settings });
+    } catch (error) { res.status(500).json({ error: 'Failed to update settings' }); }
+});
 
 // ===== COLLECTIONS CRUD =====
 router.get('/collections', async (req, res) => {
