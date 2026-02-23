@@ -7,6 +7,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useTelegram } from '../hooks/useTelegram';
 import { IconShare } from '../assets/icons';
 import api from '../services/api';
+import PresaleModal from '../components/common/PresaleModal';
 
 export default function SeriesDetail() {
     const { slug } = useParams();
@@ -14,9 +15,12 @@ export default function SeriesDetail() {
     const { t } = useTranslation();
     const { user } = useAuth();
     const { data, loading, refetch } = useApi(`/series/${slug}`);
-    const { data: presaleData } = useApi('/presale');
+
+    // UI States
     const [buyingMint, setBuyingMint] = useState(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const [showPresaleModal, setShowPresaleModal] = useState(false);
+
     const { showToast } = useToast();
     const { tg, showBackButton } = useTelegram();
 
@@ -44,9 +48,9 @@ export default function SeriesDetail() {
     // Create available blanks safely
     const availableItems = available > 0 ? Array.from({ length: Math.min(100, available) }, (_, i) => data.mintedCount + i + 1) : [];
 
-    // Check if there is an active presale
-    const isPresaleActive = presaleData?.active?.some(p => p.series?._id === data._id);
-    const activePresale = presaleData?.active?.find(p => p.series?._id === data._id);
+    // Check if there is an active presale embedded in the Series payload
+    const activePresale = data?.activePresale;
+    const isPresaleActive = !!activePresale;
 
     const handleBuy = async () => {
         if (!user) {
@@ -135,9 +139,9 @@ export default function SeriesDetail() {
                     <button
                         className="btn btn-primary btn-block"
                         style={{ height: 50, fontSize: 17, borderRadius: 16, background: '#4DB8FF', color: '#FFFFFF', border: 'none' }}
-                        onClick={() => navigate(`/presale`)}
+                        onClick={() => setShowPresaleModal(true)}
                     >
-                        Pre Sale {(activePresale?.price / 1e9).toFixed(2)} TON
+                        Join Raffle ({(activePresale?.price / 1e9).toFixed(2)} TON)
                     </button>
                 ) : (
                     <button
@@ -150,6 +154,14 @@ export default function SeriesDetail() {
                 )}
             </div>
 
+            {showPresaleModal && activePresale && (
+                <PresaleModal
+                    presale={activePresale}
+                    series={data}
+                    onClose={() => setShowPresaleModal(false)}
+                    onPledgeSuccess={refetch}
+                />
+            )}
         </div>
     );
 }

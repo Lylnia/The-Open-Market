@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import api from '../services/api';
 import PullToRefresh from '../components/PullToRefresh';
 import { useSocket } from '../hooks/useSocket';
+import PresaleModal from '../components/common/PresaleModal';
 
 export default function Home() {
     const { t } = useTranslation();
@@ -22,6 +23,7 @@ export default function Home() {
     const requestRef = useRef();
     const pauseTimeoutRef = useRef(null);
     const [isPaused, setIsPaused] = useState(false);
+    const [selectedPresaleSeries, setSelectedPresaleSeries] = useState(null);
 
     const handleInteraction = useCallback(() => {
         setIsPaused(true);
@@ -115,9 +117,18 @@ export default function Home() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                         <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
                                             <h2 className="h2" style={{ fontSize: 24, letterSpacing: '-0.6px' }}>{seriesObj.name}</h2>
-                                            <Link to={`/collection/${seriesObj.collection?.slug || ''}`} style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 8, textDecoration: 'none' }}>
-                                                GET ON MARKET
-                                            </Link>
+                                            {seriesObj.activePresale ? (
+                                                <button
+                                                    onClick={() => setSelectedPresaleSeries(seriesObj)}
+                                                    style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', background: '#4DB8FF', padding: '6px 14px', borderRadius: 16, border: 'none', cursor: 'pointer' }}
+                                                >
+                                                    JOIN PRESALE
+                                                </button>
+                                            ) : (
+                                                <Link to={`/collection/${seriesObj.collection?.slug || ''}`} style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 8, textDecoration: 'none' }}>
+                                                    GET ON MARKET
+                                                </Link>
+                                            )}
                                         </div>
 
                                         <div className="flex items-center gap-8" style={{ marginBottom: 4 }}>
@@ -164,7 +175,14 @@ export default function Home() {
                     )}
                 </section>
 
-
+                {selectedPresaleSeries && (
+                    <PresaleModal
+                        presale={selectedPresaleSeries.activePresale}
+                        series={selectedPresaleSeries}
+                        onClose={() => setSelectedPresaleSeries(null)}
+                        onPledgeSuccess={handleRefresh}
+                    />
+                )}
 
             </div>
         </PullToRefresh>

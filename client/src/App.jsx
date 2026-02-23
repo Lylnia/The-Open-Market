@@ -9,7 +9,6 @@ import SplashScreen from './components/SplashScreen';
 import MaintenanceScreen from './components/MaintenanceScreen';
 import Home from './pages/Home';
 import Market from './pages/Market';
-import PreSale from './pages/PreSale';
 import Profile from './pages/Profile';
 import Inventory from './pages/Inventory';
 import CollectionDetail from './pages/CollectionDetail';
@@ -66,7 +65,6 @@ function AppContent() {
                 <Route element={<Layout />}>
                     <Route path="/" element={<Home />} />
                     <Route path="/market" element={<Market />} />
-                    <Route path="/presale" element={<PreSale />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/inventory" element={<Inventory />} />
                     <Route path="/collection/:slug" element={<CollectionDetail />} />

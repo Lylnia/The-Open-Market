@@ -11,7 +11,20 @@ router.get('/', async (req, res) => {
             .populate('collection', 'name slug logoUrl')
             .sort({ createdAt: -1 })
             .lean();
-        res.json(series);
+
+        const PreSale = require('../models/PreSale');
+        const now = new Date();
+        const enrichedSeries = await Promise.all(series.map(async s => {
+            const activePresale = await PreSale.findOne({
+                series: s._id,
+                isActive: true,
+                startDate: { $lte: now },
+                endDate: { $gte: now }
+            }).lean();
+            return { ...s, activePresale };
+        }));
+
+        res.json(enrichedSeries);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch series' });
     }
@@ -38,8 +51,18 @@ router.get('/:slug', async (req, res) => {
         const totalNfts = await NFT.countDocuments({ series: series._id });
         const stats = await getSeriesStats(series._id);
 
+        const PreSale = require('../models/PreSale');
+        const now = new Date();
+        const activePresale = await PreSale.findOne({
+            series: series._id,
+            isActive: true,
+            startDate: { $lte: now },
+            endDate: { $gte: now }
+        }).lean();
+
         res.json({
             ...series,
+            activePresale,
             stats,
             nfts,
             pagination: {

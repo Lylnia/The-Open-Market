@@ -144,60 +144,7 @@ export default function Market() {
                     </div>
                 </div>
 
-                {/* Custom Modals for Selects */}
-                {showSeriesSelect && (
-                    <div className="modal-overlay" onClick={() => setShowSeriesSelect(false)}>
-                        <div className="modal-content" onClick={e => e.stopPropagation()}>
-                            <div className="modal-handle" />
-                            <h3 className="h3" style={{ marginBottom: 16 }}>Select Series</h3>
-                            <div style={{ maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                <button
-                                    className={`btn ${!seriesId ? 'btn-primary' : 'btn-secondary'}`}
-                                    style={{ justifyContent: 'flex-start', padding: '16px 20px' }}
-                                    onClick={() => { setSeriesId(''); setShowSeriesSelect(false); }}
-                                >
-                                    All Series
-                                </button>
-                                {seriesList.map(s => (
-                                    <button
-                                        key={s._id}
-                                        className={`btn ${seriesId === s._id ? 'btn-primary' : 'btn-secondary'}`}
-                                        style={{ justifyContent: 'flex-start', padding: '16px 20px' }}
-                                        onClick={() => { setSeriesId(s._id); setShowSeriesSelect(false); }}
-                                    >
-                                        {s.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
 
-                {showSortSelect && (
-                    <div className="modal-overlay" onClick={() => setShowSortSelect(false)}>
-                        <div className="modal-content" onClick={e => e.stopPropagation()}>
-                            <div className="modal-handle" />
-                            <h3 className="h3" style={{ marginBottom: 16 }}>Sort By</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                {[
-                                    { value: 'price_asc', label: 'Price: Ascending' },
-                                    { value: 'price_desc', label: 'Price: Descending' },
-                                    { value: 'number_asc', label: 'Number: Ascending' },
-                                    { value: 'number_desc', label: 'Number: Descending' },
-                                ].map(option => (
-                                    <button
-                                        key={option.value}
-                                        className={`btn ${sort === option.value ? 'btn-primary' : 'btn-secondary'}`}
-                                        style={{ justifyContent: 'flex-start', padding: '16px 20px' }}
-                                        onClick={() => { setSort(option.value); setShowSortSelect(false); }}
-                                    >
-                                        {option.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
 
             {(nfts || []).length === 0 && isLoading ? (
@@ -233,6 +180,61 @@ export default function Market() {
             {isLoading && nfts.length > 0 && (
                 <div className="flex justify-center" style={{ padding: '24px 0' }}>
                     <div className="spinner" style={{ width: 24, height: 24 }} />
+                </div>
+            )}
+
+            {/* Custom Modals for Selects */}
+            {showSeriesSelect && (
+                <div className="modal-overlay" style={{ zIndex: 10000 }} onClick={() => setShowSeriesSelect(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-handle" />
+                        <h3 className="h3" style={{ marginBottom: 16 }}>Select Series</h3>
+                        <div style={{ maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <button
+                                className={`btn ${!seriesId ? 'btn-primary' : 'btn-secondary'}`}
+                                style={{ justifyContent: 'flex-start', padding: '16px 20px' }}
+                                onClick={() => { setSeriesId(''); setShowSeriesSelect(false); }}
+                            >
+                                All Series
+                            </button>
+                            {seriesList.map(s => (
+                                <button
+                                    key={s._id}
+                                    className={`btn ${seriesId === s._id ? 'btn-primary' : 'btn-secondary'}`}
+                                    style={{ justifyContent: 'flex-start', padding: '16px 20px' }}
+                                    onClick={() => { setSeriesId(s._id); setShowSeriesSelect(false); }}
+                                >
+                                    {s.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showSortSelect && (
+                <div className="modal-overlay" style={{ zIndex: 10000 }} onClick={() => setShowSortSelect(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-handle" />
+                        <h3 className="h3" style={{ marginBottom: 16 }}>Sort By</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {[
+                                { value: 'price_asc', label: 'Price: Ascending' },
+                                { value: 'price_desc', label: 'Price: Descending' },
+                                { value: 'number_asc', label: 'Number: Ascending' },
+                                { value: 'number_desc', label: 'Number: Descending' },
+                            ].map(option => (
+                                <button
+                                    key={option.value}
+                                    className={`btn ${sort === option.value ? 'btn-primary' : 'btn-secondary'}`}
+                                    style={{ justifyContent: 'flex-start', padding: '16px 20px' }}
+                                    onClick={() => { setSort(option.value); setShowSortSelect(false); }}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
