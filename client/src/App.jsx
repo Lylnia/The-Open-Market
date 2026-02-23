@@ -27,7 +27,7 @@ import api from './services/api';
 
 function AppContent() {
     const { ready, expand, disableVerticalSwipes } = useTelegram();
-    const { loading } = useAuth();
+    const { user, loading } = useAuth();
     const [maintenance, setMaintenance] = useState(false);
     const [healthChecked, setHealthChecked] = useState(false);
 
@@ -53,7 +53,11 @@ function AppContent() {
         checkHealth();
     }, []);
 
-    if (maintenance && healthChecked) return <MaintenanceScreen />;
+    // Only show maintenance screen if we are sure the user is NOT an admin.
+    // We wait for `loading` to be false so the AuthContext has time to fetch `user.isAdmin`
+    if (!loading && maintenance && healthChecked && !user?.isAdmin) {
+        return <MaintenanceScreen />;
+    }
 
     return (
         <>
