@@ -272,26 +272,39 @@ router.post('/nfts/:id/transfer-system', async (req, res) => {
         const nft = await NFT.findById(req.params.id);
         if (!nft) return res.status(404).json({ error: 'NFT not found' });
 
-        // System account is inherently the admin who triggered this, or a fixed ID. 
-        // We will assign it to the req.user._id (the admin execution context).
+        // Find or create the definitive System Account
+        let systemUser = await User.findOne({ telegramId: 0 });
+        if (!systemUser) {
+            systemUser = await User.create({
+                telegramId: 0,
+                username: 'system',
+                firstName: 'System',
+                lastName: 'Account',
+                isAdmin: true
+            });
+        }
+
         const oldOwner = nft.owner;
-        nft.owner = req.user._id;
+        nft.owner = systemUser._id;
         nft.isListed = false;
         nft.listPrice = 0;
         await nft.save();
 
         await Transaction.create({
-            user: oldOwner, type: 'sell', amount: 0, nft: nft._id, toUser: req.user._id, status: 'completed',
+            user: oldOwner, type: 'sell', amount: 0, nft: nft._id, toUser: systemUser._id, status: 'completed',
             description: 'Admin Transfer: Confiscated to System'
         });
 
-        res.json({ success: true, message: 'NFT transferred to system' });
+        res.json({ success: true, message: 'NFT transferred to system account' });
     } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
 router.get('/system-nfts', async (req, res) => {
     try {
-        const nfts = await NFT.find({ owner: req.user._id })
+        let systemUser = await User.findOne({ telegramId: 0 });
+        if (!systemUser) return res.json([]);
+
+        const nfts = await NFT.find({ owner: systemUser._id })
             .populate('series', 'name slug imageUrl price collection')
             .sort({ createdAt: -1 })
             .lean();

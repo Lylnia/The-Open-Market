@@ -41,8 +41,8 @@ function AppContent() {
     useEffect(() => {
         const checkHealth = async () => {
             try {
-                const res = await api.get('/health');
-                if (res.maintenance) setMaintenance(true);
+                const res = await api.get('/api/health');
+                if (res.data?.maintenance) setMaintenance(true);
             } catch {
                 // If health check fails, show maintenance
                 setMaintenance(true);

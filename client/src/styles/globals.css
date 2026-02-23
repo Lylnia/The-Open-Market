@@ -906,6 +906,6 @@ input[type="number"] {
   }
 
   .admin-mobile-nav {
-    padding-top: calc(12px + env(safe-area-inset-top)) !important;
+    padding-top: calc(24px + env(safe-area-inset-top, 0px)) !important;
   }
 }
