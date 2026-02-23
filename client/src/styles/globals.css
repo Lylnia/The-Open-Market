@@ -904,4 +904,8 @@ input[type="number"] {
   .hidden-mobile {
     display: none !important;
   }
+
+  .admin-mobile-nav {
+    padding-top: calc(12px + env(safe-area-inset-top)) !important;
+  }
 }

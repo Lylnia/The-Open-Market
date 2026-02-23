@@ -289,6 +289,16 @@ router.post('/nfts/:id/transfer-system', async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
+router.get('/system-nfts', async (req, res) => {
+    try {
+        const nfts = await NFT.find({ owner: req.user._id })
+            .populate('series', 'name slug imageUrl price collection')
+            .sort({ createdAt: -1 })
+            .lean();
+        res.json(nfts);
+    } catch (e) { res.status(500).json({ error: 'Failed' }); }
+});
+
 router.post('/nfts/:id/burn', async (req, res) => {
     try {
         const nft = await NFT.findById(req.params.id).populate('series');

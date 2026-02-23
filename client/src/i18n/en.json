@@ -154,6 +154,8 @@
     "admin": {
         "title": "Admin Panel",
         "dashboard": "Dashboard",
+        "stats": "Overview",
+        "system_inventory": "System Inventory",
         "collections": "Collections",
         "series": "Series",
         "nfts": "NFTs",

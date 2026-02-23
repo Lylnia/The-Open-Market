@@ -154,6 +154,8 @@
     "admin": {
         "title": "Admin Panel",
         "dashboard": "Dashboard",
+        "stats": "Özet",
+        "system_inventory": "Sistem Envanteri",
         "collections": "Koleksiyonlar",
         "series": "Seriler",
         "nfts": "NFT'ler",

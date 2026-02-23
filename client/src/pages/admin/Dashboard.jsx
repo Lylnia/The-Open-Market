@@ -4,7 +4,7 @@ import { useApi } from '../../hooks/useApi';
 import { useToast } from '../../contexts/ToastContext';
 import CustomSelect from '../../components/common/CustomSelect';
 import api from '../../services/api';
-import { IconPlus } from '../../assets/icons';
+import { IconPlus, IconUsers, IconDiamond, IconShoppingCart, IconExchange, IconHistory } from '../../assets/icons';
 
 // Reusable form field
 function Field({ label, children }) {
@@ -402,8 +402,9 @@ export default function Dashboard() {
     const { data: withdrawals, refetch: refetchWithdrawals } = useApi(tab === 'withdrawals' ? '/admin/withdrawals' : null);
     const { data: apiKeys, refetch: refetchApiKeys } = useApi(tab === 'api_keys' ? '/admin/api-keys' : null);
     const { data: appSettings, refetch: refetchSettings } = useApi(tab === 'stats' ? '/admin/settings' : null);
+    const { data: systemNfts, refetch: refetchSystemNfts } = useApi(tab === 'system_inventory' ? '/admin/system-nfts' : null);
 
-    const tabs = ['stats', 'collections', 'series', 'presales', 'users', 'withdrawals', 'airdrop', 'api_keys'];
+    const tabs = ['stats', 'system_inventory', 'collections', 'series', 'presales', 'users', 'withdrawals', 'airdrop', 'api_keys'];
 
     const [modalConfig, setModalConfig] = useState(null);
 
@@ -536,20 +537,72 @@ export default function Dashboard() {
                                 </div>
                             )}
 
-                            <div className="grid-2" style={{ marginBottom: 24 }}>
+                            <div className="grid-2" style={{ marginBottom: 24, gap: 16 }}>
                                 {[
-                                    { label: t('admin.total_users'), value: stats.userCount },
-                                    { label: t('admin.total_nfts'), value: stats.nftCount },
-                                    { label: t('admin.total_orders'), value: stats.orderCount },
-                                    { label: t('admin.total_volume'), value: `${(stats.totalVolume / 1e9).toFixed(0)} TON` },
-                                    { label: t('admin.pending_withdrawals'), value: stats.pendingWithdrawals },
-                                ].map(({ label, value }) => (
-                                    <div key={label} className="card" style={{ padding: '16px', textAlign: 'center' }}>
-                                        <p className="stat-value">{value}</p>
-                                        <p className="stat-label">{label}</p>
+                                    { label: t('admin.total_users'), value: stats.userCount, icon: <IconUsers size={20} color="var(--accent)" /> },
+                                    { label: t('admin.total_nfts'), value: stats.nftCount, icon: <IconDiamond size={20} color="var(--accent)" /> },
+                                    { label: t('admin.total_orders'), value: stats.orderCount, icon: <IconShoppingCart size={20} color="var(--accent)" /> },
+                                    { label: t('admin.total_volume'), value: `${(stats.totalVolume / 1e9).toFixed(0)} TON`, icon: <IconExchange size={20} color="var(--accent)" /> },
+                                    { label: t('admin.pending_withdrawals'), value: stats.pendingWithdrawals, icon: <IconHistory size={20} color={stats.pendingWithdrawals > 0 ? "var(--warning)" : "var(--accent)"} /> },
+                                ].map(({ label, value, icon }) => (
+                                    <div key={label} className="card flex items-center gap-16" style={{ padding: '16px' }}>
+                                        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(52, 120, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            {icon}
+                                        </div>
+                                        <div>
+                                            <p className="caption" style={{ marginBottom: 4 }}>{label}</p>
+                                            <p style={{ fontSize: 20, fontWeight: 700 }}>{value}</p>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    )}
+
+                    {/* System Inventory */}
+                    {tab === 'system_inventory' && (
+                        <div>
+                            <div className="card" style={{ padding: 20, marginBottom: 24, background: 'linear-gradient(135deg, var(--bg-elevated) 0%, rgba(52, 120, 246, 0.05) 100%)', border: '1px solid var(--accent)' }}>
+                                <h2 className="h2" style={{ marginBottom: 8 }}>Sistem Envanteri</h2>
+                                <p className="body" style={{ color: 'var(--text-secondary)' }}>
+                                    Kullanıcılardan "Sisteme Aktar" işlemiyle el konulan tüm NFT'ler burada toplanmaktadır. Bu NFT'lerin mülkiyeti teknik olarak Yönetici hesabındadır.
+                                </p>
+                            </div>
+
+                            {!systemNfts ? (
+                                <p className="caption" style={{ textAlign: 'center', padding: 40 }}>Yükleniyor...</p>
+                            ) : systemNfts.length === 0 ? (
+                                <div className="card flex-col items-center justify-center p-24" style={{ textAlign: 'center', padding: 40 }}>
+                                    <IconDiamond size={48} color="var(--border)" style={{ marginBottom: 16 }} />
+                                    <h3 className="h3">Envanter Boş</h3>
+                                    <p className="caption">Sistem hesabında hiç NFT bulunmuyor.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 16 }}>
+                                    {systemNfts.map(nft => (
+                                        <div key={nft._id} style={{ background: 'var(--bg-elevated)', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
+                                            <div style={{ aspectRatio: '1', background: 'var(--bg-base)', position: 'relative' }}>
+                                                {nft.series?.imageUrl && <img src={nft.series.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
+                                                <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 11, fontWeight: 600, padding: '4px 8px', borderRadius: 8 }}>
+                                                    #{nft.mintNumber}
+                                                </div>
+                                            </div>
+                                            <div style={{ padding: 12, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                                <div>
+                                                    <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nft.series?.name}</p>
+                                                    <p className="caption" style={{ fontSize: 11, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Koleksiyon: {nft.series?.collection?.name}</p>
+                                                </div>
+                                                <button className="btn btn-sm" style={{ marginTop: 12, fontSize: 11, background: 'rgba(255, 59, 48, 0.1)', color: 'var(--error)' }}
+                                                    onClick={() => setModalConfig({
+                                                        actionType: 'burn', id: nft._id, title: 'NFT Yak', isDanger: true,
+                                                        message: 'DİKKAT: Sistem envanterindeki bu NFT kalıcı olarak YAKILACAK (Silinecek). Emin misiniz?'
+                                                    })}>Kalıcı Olarak Yak
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
