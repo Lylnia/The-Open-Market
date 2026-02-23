@@ -8,8 +8,8 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const series = await Series.find({ isActive: true })
-            .select('name _id')
-            .sort({ name: 1 })
+            .populate('collection', 'name slug logoUrl')
+            .sort({ createdAt: -1 })
             .lean();
         res.json(series);
     } catch (error) {

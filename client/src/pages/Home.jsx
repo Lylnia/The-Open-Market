@@ -9,18 +9,27 @@ import { useSocket } from '../hooks/useSocket';
 export default function Home() {
     const { t } = useTranslation();
     const { data: collectionsData, loading, refetch: refetchCollections } = useApi('/collections');
-    const { data: presaleRes, loading: presaleLoading, refetch: refetchPresale } = useApi('/presale');
+    const { data: seriesRes, loading: seriesLoading, refetch: refetchSeries } = useApi('/series');
     const collections = collectionsData?.data || collectionsData || [];
 
-    const presales = presaleRes?.active || presaleRes?.upcoming || [];
+    const seriesList = seriesRes || [];
 
     const handleRefresh = useCallback(async () => {
-        await Promise.all([refetchCollections(), refetchPresale()]);
-    }, [refetchCollections, refetchPresale]);
+        await Promise.all([refetchCollections(), refetchSeries()]);
+    }, [refetchCollections, refetchSeries]);
 
     const scrollRef = useRef(null);
     const requestRef = useRef();
+    const pauseTimeoutRef = useRef(null);
     const [isPaused, setIsPaused] = useState(false);
+
+    const handleInteraction = useCallback(() => {
+        setIsPaused(true);
+        if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = setTimeout(() => {
+            setIsPaused(false);
+        }, 2000); // Resume scroll 2 seconds after last touch/scroll
+    }, []);
 
     const scrollLoop = useCallback(() => {
         if (!isPaused && scrollRef.current) {
@@ -38,7 +47,10 @@ export default function Home() {
 
     useEffect(() => {
         requestRef.current = requestAnimationFrame(scrollLoop);
-        return () => cancelAnimationFrame(requestRef.current);
+        return () => {
+            cancelAnimationFrame(requestRef.current);
+            if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+        };
     }, [scrollLoop]);
 
     return (
@@ -54,10 +66,12 @@ export default function Home() {
                         <div
                             className="scroll-h hide-scrollbar"
                             ref={scrollRef}
-                            onMouseEnter={() => setIsPaused(true)}
+                            onMouseEnter={handleInteraction}
                             onMouseLeave={() => setIsPaused(false)}
-                            onTouchStart={() => setIsPaused(true)}
-                            onTouchEnd={() => setIsPaused(false)}
+                            onTouchStart={handleInteraction}
+                            onTouchMove={handleInteraction}
+                            onScroll={handleInteraction}
+                            onWheel={handleInteraction}
                             style={{ gap: 16, padding: '0 16px', margin: '0 -16px', scrollBehavior: 'auto' }}
                         >
                             {/* Duplicate array for seamless looping illusion if enough items, or just map once */}
@@ -88,38 +102,32 @@ export default function Home() {
                     </div>
                 )}
 
-                {/* Presale Section */}
+                {/* Series Section */}
                 <section className="section" style={{ marginBottom: 24 }}>
-                    {presaleLoading ? (
+                    {seriesLoading ? (
                         <div className="flex-col gap-12">
                             {[1].map(i => <div key={i} className="skeleton" style={{ height: 160, borderRadius: 20 }} />)}
                         </div>
-                    ) : presales?.length > 0 ? (
+                    ) : seriesList?.length > 0 ? (
                         <div className="flex-col gap-24">
-                            {presales.map((presale) => (
-                                <div key={presale._id} className="flex-col gap-16">
+                            {seriesList.slice(0, 10).map((seriesObj) => (
+                                <div key={seriesObj._id} className="flex-col gap-16">
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                         <div className="flex items-center justify-between" style={{ marginBottom: 4 }}>
-                                            <h2 className="h2" style={{ fontSize: 24, letterSpacing: '-0.6px' }}>{presale.name}</h2>
-                                            {presale.soldCount >= presale.totalSupply ? (
-                                                <Link to={`/collection/${presale.series?.collection?.slug}`} style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 8, textDecoration: 'none' }}>
-                                                    GET ON MARKET
-                                                </Link>
-                                            ) : (
-                                                <Link to="/presale" style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', background: '#4DB8FF', padding: '6px 14px', borderRadius: 16, textDecoration: 'none' }}>
-                                                    {(presale.price / 1e9).toFixed(2)} TON
-                                                </Link>
-                                            )}
+                                            <h2 className="h2" style={{ fontSize: 24, letterSpacing: '-0.6px' }}>{seriesObj.name}</h2>
+                                            <Link to={`/collection/${seriesObj.collection?.slug || ''}`} style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 8, textDecoration: 'none' }}>
+                                                GET ON MARKET
+                                            </Link>
                                         </div>
 
                                         <div className="flex items-center gap-8" style={{ marginBottom: 4 }}>
                                             <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--bg-elevated)', overflow: 'hidden' }}>
-                                                {presale.series?.collection?.logoUrl ?
-                                                    <img src={presale.series.collection.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> :
+                                                {seriesObj.collection?.logoUrl ?
+                                                    <img src={seriesObj.collection.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> :
                                                     <div style={{ width: '100%', height: '100%', background: 'var(--accent)' }} />
                                                 }
                                             </div>
-                                            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{presale.series?.collection?.name || 'Pre-Sale Collection'}</span>
+                                            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{seriesObj.collection?.name || 'Collection'}</span>
                                         </div>
 
                                         <div className="scroll-h" style={{ gap: 12, paddingBottom: 8, margin: '0 -16px', padding: '0 16px' }}>
@@ -129,12 +137,12 @@ export default function Home() {
                                                     background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     position: 'relative', overflow: 'hidden'
                                                 }}>
-                                                    {presale.series?.imageUrl ?
-                                                        <img src={presale.series.imageUrl} alt="" style={{ width: '80%', height: '80%', objectFit: 'contain' }} /> :
+                                                    {seriesObj.imageUrl ?
+                                                        <img src={seriesObj.imageUrl} alt="" style={{ width: '80%', height: '80%', objectFit: 'contain' }} /> :
                                                         <div style={{ width: '100%', height: '100%', background: 'var(--bg-elevated)' }} />
                                                     }
                                                     {idx === 2 && (
-                                                        <Link to={`/presale`} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+                                                        <Link to={`/market`} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
                                                             <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: '0.5px' }}>MORE</span>
                                                         </Link>
                                                     )}
@@ -148,10 +156,10 @@ export default function Home() {
                     ) : (
                         <div style={{ marginBottom: 0 }}>
                             <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-                                <h2 className="h2" style={{ fontSize: 24, letterSpacing: '-0.6px' }}>Presale</h2>
-                                <Link to="/presale" style={{ fontSize: 16, fontWeight: 600, color: '#4DB8FF', textDecoration: 'none' }}>See all</Link>
+                                <h2 className="h2" style={{ fontSize: 24, letterSpacing: '-0.6px' }}>Series</h2>
+                                <Link to="/market" style={{ fontSize: 16, fontWeight: 600, color: '#4DB8FF', textDecoration: 'none' }}>See all</Link>
                             </div>
-                            <p className="caption">No active presales</p>
+                            <p className="caption">No active series</p>
                         </div>
                     )}
                 </section>
