@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const { auth } = require('../middleware/auth');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const tonService = require('../services/tonService');
+const { notifyWithdrawal } = require('../services/telegramService');
 
 const router = express.Router();
 
@@ -47,7 +49,7 @@ router.post('/withdraw', auth, async (req, res) => {
             return res.status(400).json({ error: 'Insufficient balance' });
         }
 
-        // Deduct balance immediately, mark as pending for admin approval
+        // Deduct balance immediately, mark as pending
         user.balance -= amount;
         await user.save({ session });
 
@@ -61,13 +63,46 @@ router.post('/withdraw', auth, async (req, res) => {
         }], { session });
 
         await session.commitTransaction();
-        res.json({ success: true, transaction: tx[0] });
+        session.endSession(); // End session early to free locks
+
+        // Check if amount qualifies for auto-withdrawal
+        const thresholdTON = parseFloat(process.env.AUTO_WITHDRAW_THRESHOLD || '5');
+        const thresholdNano = thresholdTON * 1e9;
+        let autoProcessed = false;
+
+        if (amount <= thresholdNano) {
+            const withdrawalResult = await tonService.sendWithdrawal(toAddress, amount);
+            if (withdrawalResult.success) {
+                const updatedTx = await Transaction.findById(tx[0]._id);
+                updatedTx.status = 'completed';
+                updatedTx.txHash = withdrawalResult.txHash;
+                updatedTx.description += ' (Auto-processed)';
+                await updatedTx.save();
+
+                autoProcessed = true;
+                tx[0] = updatedTx; // Update local ref for response
+                notifyWithdrawal(user.telegramId, amount / 1e9, 'completed');
+            } else {
+                console.warn(`[Auto-Withdraw] Failed for ${user.username}, keeping as pending for admin review:`, withdrawalResult.error);
+            }
+        }
+
+        return res.json({
+            success: true,
+            transaction: tx[0],
+            autoProcessed,
+            message: autoProcessed ? 'Withdrawal processed automatically!' : 'Withdrawal pending manual approval.'
+        });
     } catch (error) {
-        await session.abortTransaction();
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
         console.error('Withdrawal error:', error);
         res.status(500).json({ error: 'Withdrawal request failed' });
     } finally {
-        session.endSession();
+        if (!session.hasEnded) {
+            session.endSession();
+        }
     }
 });
 

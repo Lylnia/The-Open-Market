@@ -1,4 +1,5 @@
 const TonWeb = require('tonweb');
+const tonMnemonic = require('tonweb-mnemonic');
 
 let tonweb;
 if (process.env.TON_API_KEY) {
@@ -33,11 +34,42 @@ const checkDeposit = async (memo) => {
     }
 };
 
-const sendWithdrawal = async (toAddress, amount) => {
-    // Note: Actual withdrawal requires tonweb-mnemonic and securely stored seed phrases.
-    // This is logged for the manual dispatching queue in production until a hot-wallet is fully set up.
-    console.log(`[Queue] Withdrawal request of ${amount} nanoTON to ${toAddress}`);
-    return { success: true, txHash: `pending_tx_${Date.now()}` };
+const sendWithdrawal = async (toAddress, amountNano) => {
+    try {
+        const mnemonicPhrase = process.env.TON_MNEMONIC;
+        if (!mnemonicPhrase) {
+            console.warn('[Queue] Automated withdrawal aborted: TON_MNEMONIC is not set.');
+            return { success: false, error: 'Hot-wallet mnemonic not configured' };
+        }
+
+        const mnemonicArray = mnemonicPhrase.split(' ');
+        const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonicArray);
+
+        const WalletClass = tonweb.wallet.all.v4R2;
+        const wallet = new WalletClass(tonweb.provider, {
+            publicKey: keyPair.publicKey,
+            wc: 0
+        });
+
+        const seqno = (await wallet.methods.seqno().call()) || 0;
+
+        const transfer = wallet.methods.transfer({
+            secretKey: keyPair.secretKey,
+            toAddress: toAddress,
+            amount: TonWeb.utils.toNano(amountNano.toString()),
+            seqno: seqno,
+            payload: 'Withdrawal from The Open Market',
+            sendMode: 3,
+        });
+
+        const tx = await transfer.send();
+        console.log(`[Success] Real Withdrawal of ${amountNano} TON dispatched to ${toAddress}, Seqno: ${seqno}`);
+
+        return { success: true, txHash: `seqno_${seqno}_${Date.now()}` };
+    } catch (error) {
+        console.error('[Error] Real Withdrawal Failed:', error);
+        return { success: false, error: error.message };
+    }
 };
 
 const generateMemo = (telegramId) => {

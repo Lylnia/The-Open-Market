@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { auth } = require('../middleware/auth');
+const tonService = require('../services/tonService');
 const admin = require('../middleware/admin');
 const Collection = require('../models/Collection');
 const Series = require('../models/Series');
@@ -215,15 +216,59 @@ router.get('/withdrawals', async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 router.post('/withdrawals/:id/approve', async (req, res) => {
+    let session = null;
     try {
         const tx = await Transaction.findById(req.params.id).populate('user');
         if (!tx || tx.type !== 'withdrawal') return res.status(404).json({ error: 'Not found' });
-        tx.status = 'completed';
-        await tx.save();
-        const { notifyWithdrawal } = require('../services/telegramService');
-        notifyWithdrawal(tx.user.telegramId, tx.amount / 1e9, 'completed');
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: 'Failed' }); }
+        if (tx.status !== 'pending') return res.status(400).json({ error: 'Transaction is not pending' });
+
+        // 1. Send real withdrawal
+        const withdrawAmountNano = tonService.toNano(tx.amount / 1e9);
+        const withdrawalResult = await tonService.sendWithdrawal(tx.memo, withdrawAmountNano); // tx.memo stores the destination address for withdrawals in this architecture
+
+        session = await mongoose.startSession();
+        session.startTransaction();
+
+        if (withdrawalResult.success) {
+            tx.status = 'completed';
+            tx.txHash = withdrawalResult.txHash;
+            await tx.save({ session });
+            await session.commitTransaction();
+
+            const { notifyWithdrawal } = require('../services/telegramService');
+            notifyWithdrawal(tx.user.telegramId, tx.amount / 1e9, 'completed');
+            res.json({ success: true, txHash: withdrawalResult.txHash });
+        } else {
+            // Fail and refund internally
+            tx.status = 'failed';
+            tx.description = `Blockchain payout failed: ${withdrawalResult.error}`;
+            await tx.save({ session });
+
+            // Refund user
+            await User.findByIdAndUpdate(tx.user._id, { $inc: { balance: tx.amount } }, { session });
+
+            // Log refund
+            await Transaction.create([{
+                user: tx.user._id,
+                type: 'deposit',
+                amount: tx.amount,
+                status: 'completed',
+                description: 'Refund for failed withdrawal'
+            }], { session });
+
+            await session.commitTransaction();
+
+            const { notifyWithdrawal } = require('../services/telegramService');
+            notifyWithdrawal(tx.user.telegramId, tx.amount / 1e9, 'failed');
+            res.status(500).json({ error: 'On-chain payout failed. Funds returned to user.', details: withdrawalResult.error });
+        }
+    } catch (e) {
+        if (session) await session.abortTransaction();
+        console.error('Withdrawal auth error:', e);
+        res.status(500).json({ error: 'Internal failure' });
+    } finally {
+        if (session) session.endSession();
+    }
 });
 router.post('/withdrawals/:id/reject', async (req, res) => {
     try {
