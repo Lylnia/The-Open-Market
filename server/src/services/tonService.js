@@ -10,6 +10,25 @@ if (process.env.TON_API_KEY) {
     tonweb = new TonWeb(new TonWeb.HttpProvider('https://toncenter.com/api/v2/jsonRPC'));
 }
 
+const initHotWallet = async () => {
+    try {
+        const mnemonicPhrase = process.env.TON_MNEMONIC;
+        if (!mnemonicPhrase) return;
+        const mnemonicArray = mnemonicPhrase.split(' ');
+        const keyPair = await tonMnemonic.mnemonicToKeyPair(mnemonicArray);
+        const WalletClass = tonweb.wallet.all.v4R2;
+        const wallet = new WalletClass(tonweb.provider, {
+            publicKey: keyPair.publicKey,
+            wc: 0
+        });
+        const address = await wallet.getAddress();
+        console.log(`🔥 Hot Wallet (v4R2) Initialized. Derived Address: ${address.toString(true, true, true)}`);
+        console.log(`⚠️ Ensure this exact address has a TON balance to pay for transaction gas!`);
+    } catch (e) {
+        console.error('Hot Wallet init error:', e.message);
+    }
+};
+
 const checkDeposit = async (memo) => {
     try {
         const walletAddress = process.env.TON_WALLET_ADDRESS;
@@ -51,18 +70,31 @@ const sendWithdrawal = async (toAddress, amountNano) => {
             wc: 0
         });
 
-        const seqno = (await wallet.methods.seqno().call()) || 0;
+        let seqno = null;
+        try {
+            seqno = await wallet.methods.seqno().call();
+        } catch (seqnoError) {
+            console.warn('[Queue] Wallet is uninitialized, proceeding with deploy payload.');
+            seqno = null; // Uninitialized state
+        }
 
         const transfer = wallet.methods.transfer({
             secretKey: keyPair.secretKey,
             toAddress: toAddress,
-            amount: TonWeb.utils.toNano(amountNano.toString()),
-            seqno: seqno,
+            amount: amountNano.toString(),
+            seqno: seqno || 0,
             payload: 'Withdrawal from The Open Market',
-            sendMode: 3,
+            sendMode: 3, // Pay gas from contract balance but don't bounce the whole amount
         });
 
-        const tx = await transfer.send();
+        // Send stateInit if it's the very first transaction (uninitialized)
+        let tx;
+        if (seqno === null) {
+            tx = await transfer.send(); // First transfer implicitly includes deploy payload in tonweb if uninitialized
+        } else {
+            tx = await transfer.send();
+        }
+
         console.log(`[Success] Real Withdrawal of ${amountNano} TON dispatched to ${toAddress}, Seqno: ${seqno}`);
 
         return { success: true, txHash: `seqno_${seqno}_${Date.now()}` };
@@ -87,4 +119,4 @@ const toNano = (ton) => {
     return Math.round(ton * 1e9);
 };
 
-module.exports = { checkDeposit, sendWithdrawal, generateMemo, formatTON, toNano };
+module.exports = { checkDeposit, sendWithdrawal, generateMemo, formatTON, toNano, initHotWallet };

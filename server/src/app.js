@@ -22,7 +22,9 @@ initBot();
 
 // Start TON Deposit Listener
 const { startDepositCron } = require('./tasks/checkDeposits');
+const { initHotWallet } = require('./services/tonService');
 startDepositCron();
+initHotWallet();
 
 // Middleware
 app.use(cors({
