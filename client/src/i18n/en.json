@@ -113,6 +113,8 @@
         "airdrop": "Airdrop",
         "referral": "Referral",
         "royalty": "Royalty",
+        "locked": "Locked (Raffle)",
+        "refund": "Raffle Refund",
         "no_transactions": "No transactions yet",
         "pending": "Pending",
         "completed": "Completed",

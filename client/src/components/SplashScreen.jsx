@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import logo from '../assets/logo.jpg';
 
 export default function SplashScreen({ loading }) {
     const [visible, setVisible] = useState(true);
@@ -19,12 +20,8 @@ export default function SplashScreen({ loading }) {
 
     return (
         <div className={`splash-screen ${fadeOut ? 'fade-out' : ''}`}>
-            <div className="splash-logo">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                    <path d="M2 17l10 5 10-5" />
-                    <path d="M2 12l10 5 10-5" />
-                </svg>
+            <div className="splash-logo" style={{ overflow: 'hidden', padding: 0 }}>
+                <img src={logo} alt="The Open Market" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <p className="splash-title">The Open Market</p>
             <p className="splash-subtitle">NFT Marketplace</p>

@@ -16,8 +16,8 @@ export default function Transactions() {
 
     const { data, loading } = useApi('/transactions', Object.keys(queryParams).length ? queryParams : {}, [filter, daysFilter]);
 
-    const types = ['', 'deposit', 'withdrawal', 'buy', 'sell', 'transfer_in', 'transfer_out', 'airdrop', 'referral_earning'];
-    const typeLabels = { '': 'Tümü', deposit: t('transactions.deposit'), withdrawal: t('transactions.withdrawal'), buy: t('transactions.buy'), sell: t('transactions.sell'), transfer_in: t('transactions.transfer_in'), transfer_out: t('transactions.transfer_out'), airdrop: t('transactions.airdrop'), referral_earning: t('transactions.referral') };
+    const types = ['', 'deposit', 'withdrawal', 'buy', 'sell', 'transfer_in', 'transfer_out', 'airdrop', 'referral_earning', 'locked', 'refund'];
+    const typeLabels = { '': 'Tümü', deposit: t('transactions.deposit'), withdrawal: t('transactions.withdrawal'), buy: t('transactions.buy'), sell: t('transactions.sell'), transfer_in: t('transactions.transfer_in'), transfer_out: t('transactions.transfer_out'), airdrop: t('transactions.airdrop'), referral_earning: t('transactions.referral'), locked: t('transactions.locked', 'Locked'), refund: t('transactions.refund', 'Refund') };
     const typeOptions = types.map(t => ({ value: t, label: typeLabels[t] || t }));
 
     const dateFilters = [
@@ -37,6 +37,8 @@ export default function Transactions() {
         transfer_out: { icon: IconExchange, color: 'var(--text-secondary)', bg: 'var(--bg-elevated)' },
         airdrop: { icon: IconGift, color: '#FF2D55', bg: 'rgba(255, 45, 85, 0.1)' },
         referral_earning: { icon: IconUsers, color: 'var(--success)', bg: 'rgba(52, 199, 89, 0.1)' },
+        locked: { icon: IconArrowUpRight, color: '#ff9f0a', bg: 'rgba(255, 159, 10, 0.1)' },
+        refund: { icon: IconArrowDownLeft, color: 'var(--success)', bg: 'rgba(52, 199, 89, 0.1)' },
         default: { icon: IconTag, color: 'var(--text-secondary)', bg: 'var(--bg-elevated)' }
     };
 

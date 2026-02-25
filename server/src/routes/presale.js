@@ -74,7 +74,7 @@ router.post('/:id/pledge', auth, async (req, res) => {
             }], { session });
 
             await Transaction.create([{
-                user: buyer._id, type: 'withdraw', amount: totalCost, status: 'completed',
+                user: buyer._id, type: 'locked', amount: totalCost, status: 'completed',
                 description: `Locked TON for Pre-sale Pledge: ${presale.name} (x${amount})`,
             }], { session });
 
@@ -174,7 +174,7 @@ router.post('/:id/draw', auth, async (req, res) => {
                     await buyer.save();
 
                     await Transaction.create({
-                        user: buyer._id, type: 'deposit', amount: refundAmount, status: 'completed',
+                        user: buyer._id, type: 'refund', amount: refundAmount, status: 'completed',
                         description: `Pre-sale Refund: ${losses} ${losses === 1 ? 'pack' : 'packs'} lost in raffle for ${presale.name}`,
                     });
                 }
